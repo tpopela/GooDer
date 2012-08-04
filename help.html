@@ -1,0 +1,174 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+    <body>
+<center><h1>Nápověda aplikace gReader</h1></center>
+
+<h2>Popis aplikace</h2>
+Aplikace gReader slouží jako nativní rozhraní pro webovou službu Google Reader. Aplikace dokáže stáhnout a zobrazit zdroje a položky, které přihlášený uživatel odebírá. 
+
+<h2>Vzhled</h2>
+Aplikace nabízí možnost skrývat panel se zdroji, menu a lištu nástrojů pro maximalizaci prostoru věnovanému obsahu položek.
+
+<h2>Spuštění</h2>
+Pro spuštění a správnou funkčnost této aplikace je nutný uživatelský účet vytvořený na serveru Google. Informace o účtu vyplníme do nastavení.
+
+<h2>Ovládání</h2>
+Aplikace nabízí několik způsobů ovládání. 
+První režim vychází z textového editoru VIM, který je znám svým promyšleným systémem příkazů a kompletním využitím klávesnice pro jeho ovládání. Pro aktivaci režimu zadávání příkazů je třeba v editoru VIM stisknout klávesu ":". 
+Nyní můžeme zadávat jednotlivé příkazy, které se provedou po stisknutí klávesy Enter. Stejný systém jsem zakomponoval i do své aplikace. Po aktivování režimu pro zadávání příkazů (také klávesou ":") se ve spodní části hlavního okna programu zobrazí pole pro zadávání příkazů.
+Přes příkazy můžeme měnit nastavení aplikace (například změna uživatelského jména) či procházet mezi jednotlivými položkami, zdroji nebo štítky. Program má také historii příkazů, kterou vyvoláme po stisknutí kláves nahoru či dolů při aktivovaném poli pro zadání příkazů.
+
+<center>
+<table border="1">
+<tr>
+<td>Příkaz	 			</td><td>Funkce</td>
+</tr>
+<tr>
+<td>a, add				</td><td>Zobrazí dialog pro přidání nového zdroje</td>
+</tr>
+<tr>
+<td>a adresa\_zdroje název štítek 	</td><td>Přidá zdroj se zadanou adresou, názvem a štítkem</td>
+</tr>
+<tr>
+<td>add adresa\_zdroje název štítek 	</td><td>Přidá zdroj se zadanou adresou, názvem a štítkem</td>
+</tr>
+<tr>
+<td>a label název_štítku		</td><td>Přidá štítek označené položce</td>
+</tr>
+<tr>
+<td>add label název_štítku		</td><td>Přidá štítek označené položce</td>
+</tr>
+<tr>
+<td>c, check 				</td><td>Aktualizuje seznam zdrojů a položek</td>
+</tr>
+<tr>
+<td>m, mark				</td><td>Označí zdroj/štítek jako přečtený</td>
+</tr>
+<tr>
+<td>mi, minimize			</td><td>Minimalizuje aplikaci</td>
+</tr>
+<tr>
+<td>n, next				</td><td>Přejde na následující položku</td>
+</tr>
+<tr>
+<td>nf				 	</td><td>Přejde na následující zdroj</td>
+</tr>
+<tr>
+<td>nl				 	</td><td>Přejde na následující štítek</td>
+</tr>
+<tr>
+<td>o, options			 	</td><td>Zobrazí dialog s nastavením programu</td>
+</tr>
+<tr>
+<td>p, prev				</td><td>Přejde na předchozí položku</td>
+</tr>
+<tr>
+<td>pf				 	</td><td>Přejde na předchozí zdroj</td>
+</tr>
+<tr>
+<td>pl				 	</td><td>Přejde na předchozí štítek</td>
+</tr>
+<tr>
+<td>q, wq, quit			 	</td><td>Ukončí aplikaci</td>
+</tr>
+<tr>
+<td>rm, remove			 	</td><td>Zobrazí dialog pro odebrání zdrojů</td>
+</tr>
+<tr>
+<td>rm this				</td><td>Odstraní zdroj, který je aktuálně zvolen</td>
+</tr>
+<tr>
+<td>remove this			 	</td><td></td>
+</tr>
+<tr>
+<td>rm label			 	</td><td>Odstraní štítek zvolené položky</td>
+</tr>
+<tr>
+<td>remove label 			</td><td></td>
+</tr>
+<tr>
+<td>set autohide on/off		 	</td><td>Zapne/vypne skrývání seznamu zdrojů</td>
+</tr>
+<tr>
+<td>set password hodnota	 	</td><td>Nastaví heslo k Google Reader účtu</td>
+</tr>
+<tr>
+<td>set time hodnota		 	</td><td>Nastaví čas automatické aktualizace</td>
+</tr>
+<tr>
+<td>set username hodnota		</td><td>Nastaví uživatelské jméno aktivního účtu</td>
+</tr>
+<tr>
+<td>set toolbar on/off		 	</td><td>Zapne/vypne lištu nástrojů</td>
+</tr>
+<tr>
+<td>set menu on/off			</td><td>Zapne/vypne menu</td>
+</tr>
+<tr>
+<td>tt				 	</td><td>Zobrazí/skryje lištu nástrojů</td>
+</tr>
+<tr>
+<td>tm				 	</td><td>Zobrazí/skryje menu aplikace</td>
+</tr>
+</table>
+</center>
+
+Další z možností jak ovládat aplikaci gReader bez nutnosti používat myš nebo touchpad jsou klávesové zkratky. V aplikaci jsou již klávesové zkratky přednastaveny, ale uživateli je ponechána možnost jejich změny. 
+
+<center>
+<table border="1">
+<tr>
+<td>Klávesa</td><td>Funkce</td>
+</tr>
+<tr>
+<td>Ctrl + .</td><td>Přejde na následující položku</td>
+</tr>
+<tr>
+<td>Ctrl + ,</td><td>Přejde na předchozí položku</td>
+</tr>
+<tr>
+<td>Ctrl + §, Ctrl + ' 		</td><td> Přejde na následující zdroj</td>
+</tr>
+<tr>
+<td>Ctrl + ;, Ctrl + ů 		</td><td> Přejde na předchozí zdroj</td>
+</tr>
+<tr>
+<td>Ctrl + ], Ctrl + ) 	</td><td> Přejde na následující štítek</td>
+</tr>
+<tr>
+<td>Ctrl + [, Ctrl + ú 	</td><td> Přejde na předchozí štítek</td>
+</tr>
+<tr>
+<td>Ctrl + \textbackslash	</td><td> Zobrazí/skryje seznam zdrojů</td>
+</tr>
+<tr>
+<td>Ctrl + N			</td><td> Zobrazí dialog pro přidání nového zdroje</td>
+</tr>
+<tr>
+<td>Ctrl + R			</td><td> Zobrazí dialog pro odebrání zdrojů</td>
+</tr>
+<tr>
+<td>Ctrl + M			</td><td> Označí zdroj/štítek jako přečtený</td>
+</tr>
+<tr>
+<td>Ctrl + P			</td><td> Zobrazí dialog s nastavením programu</td>
+</tr>
+<tr>
+<td>Ctrl + F, /			</td><td> Zobrazí pole pro vyhledávání položek</td>
+</tr>
+<tr>
+<td>ZZ 					</td><td> Ukončí aplikaci</td>
+</tr>
+<tr>
+<td>F5					</td><td> Aktualizuje seznam zdrojů a položek</td>
+</tr>
+<tr>
+<td>F1  				</td><td> Zobrazí tuto nápovědu</td>
+</tr>
+</table>
+</center>
+
+    </body>
+</html>

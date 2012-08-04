@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>icons/addFeed.png</file>
+        <file>icons/checkFeed.png</file>
+        <file>icons/markFeed.png</file>
+        <file>icons/removeFeed.png</file>
+        <file>icons/settings.png</file>
+        <file>icons/GooDer.svgz</file>
+        <file>icons/GooDerNew.svgz</file>
+    </qresource>
+    <qresource prefix="/help">
+        <file>help.html</file>
+    </qresource>
+</RCC>
