@@ -31,14 +31,13 @@ class GoogleReader : public QObject {
         void login(QString, QString);
 
     private:
-        QTimer* timerRefreshSID;
-        QNetworkCookie* googleCookie;
+        QTimer* _timerRefreshSessionID;
+        QNetworkCookie* _googleCookie;
 
-        QString username;
-        QString password;
-
-        QString sessionID;
-        QString googleToken;
+        QString _username;
+        QString _password;
+        QString _sessionID;
+        QString _googleToken;
 
         void setCookie();
         void makeLogin();

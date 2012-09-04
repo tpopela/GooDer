@@ -11,51 +11,51 @@ class Feed : public QObject {
         QList<Entry*> entries;
 
         Feed();
-        Feed(QString p_id, QString p_title);
-        Feed(QString p_id, QString p_title, QList<QString> p_label, QString p_firstItemMsec);
+        Feed(QString, QString);
+        Feed(QString, QString, QList<QString>, QString);
 
         //navrati ID zdroje
-        QString getId() { return id; }
+        QString getId() { return _id; }
         //navrati nazev zdroje
-        QString getTitle() { return title; }
+        QString getTitle() { return _title; }
         //navrati stitek pokud je zdroj oznacen
-        QList<QString> getLabel() { return labelList; }
+        QList<QString> getLabel() { return _labelList; }
         //navrati pocet neprectenych polozek ve zdroji
-        int getUnreadCount() { return unreadCount; }
+        int getUnreadCount() { return _unreadCount; }
 
-        long getFirstItemTime() { return firstItemMsec; }
+        long getFirstItemTime() { return _firstItemMsec; }
 
         //nastavi stitek zdroje
-        void setLabel(QString p_label) { labelList.append(p_label); }
+        void setLabel(QString p_label) { _labelList.append(p_label); }
 
         void removeLabel(QString p_label) {
-            for (int i = 0; i < labelList.count(); i++) {
-                if (p_label == labelList.at(i)) {
-                    labelList.removeAt(i);
+            for (int i = 0; i < _labelList.count(); i++) {
+                if (p_label == _labelList.at(i)) {
+                    _labelList.removeAt(i);
                 }
             }
         }
 
         //nastavi nazev zdroje
-        void setTitle(QString p_title) { title = p_title; }
+        void setTitle(QString p_title) { _title = p_title; }
         //nastavi stitek zdroje
-        void setNewestItemTimestamp(int p_newestItemTimestamp) { newestItemTimestampUsec = p_newestItemTimestamp; }
+        void setNewestItemTimestamp(int p_newestItemTimestamp) { _newestItemTimestampUsec = p_newestItemTimestamp; }
         //nastavi pocet neprectenych polozek
-        void setUnreadCount(int p_count) { unreadCount = p_count; }
+        void setUnreadCount(int p_count) { _unreadCount = p_count; }
         //znizi pocet neprectenych polozek
-        void decrementUnreadCount() { if (unreadCount > 0) unreadCount--; }
+        void decrementUnreadCount() { if (_unreadCount > 0) _unreadCount--; }
 
         QList<Entry*> getEntriesList() {
             return entries;
         }
 
     private:
-        QString id;
-        QString title;
-        QList<QString> labelList;
-        int unreadCount;
-        long newestItemTimestampUsec;
-        long firstItemMsec;
+        QString _id;
+        QString _title;
+        QList<QString> _labelList;
+        int _unreadCount;
+        long _newestItemTimestampUsec;
+        long _firstItemMsec;
 };
 
 #endif // FEED_H

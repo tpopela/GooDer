@@ -1,33 +1,34 @@
 #include "googlereadercontroller.h"
 
 GoogleReaderController::GoogleReaderController() {
-    database = new Database();
-    googleReader = new GoogleReader();
-    firstRun = true;
-    alreadyFetchingNoEntries = false;
-    cnt = 0;
+    _database = new Database();
+    _googleReader = new GoogleReader();
+    _firstRun = true;
+    _alreadyFetchingNoEntries = false;
+    _feedsWithNoEntriesCount = 0;
+    _fetchingEntriesFromHistory = false;
 
-    connect(googleReader, SIGNAL(signalConnected(bool)),
+    connect(_googleReader, SIGNAL(signalConnected(bool)),
             this, SLOT(statusConnected(bool)));
-    connect(googleReader, SIGNAL(signalStatusMarkFeedAsRead(bool)),
+    connect(_googleReader, SIGNAL(signalStatusMarkFeedAsRead(bool)),
             this, SLOT(statusMarkFeedAsRead(bool)));
-    connect(googleReader, SIGNAL(signalStatusMarkEntryAsRead(bool)),
+    connect(_googleReader, SIGNAL(signalStatusMarkEntryAsRead(bool)),
             this, SLOT(statusMarkEntryAsRead(bool)));
-    connect(googleReader, SIGNAL(signalStatusLogin(bool)),
+    connect(_googleReader, SIGNAL(signalStatusLogin(bool)),
             this, SLOT(statusLogin(bool)));
-    connect(googleReader, SIGNAL(shareRawFeeds(QByteArray)),
+    connect(_googleReader, SIGNAL(shareRawFeeds(QByteArray)),
             this, SLOT(rawGetFeeds(QByteArray)));
-    connect(googleReader, SIGNAL(shareRawUnreadFeeds(QByteArray)),
+    connect(_googleReader, SIGNAL(shareRawUnreadFeeds(QByteArray)),
             this, SLOT(rawGetUnreadFeeds(QByteArray)));
-    connect(googleReader, SIGNAL(shareRawEntries(QByteArray)),
+    connect(_googleReader, SIGNAL(shareRawEntries(QByteArray)),
             this, SLOT(rawGetEntries(QByteArray)));
-    connect(googleReader, SIGNAL(signalStatusAddFeedLabel(bool)),
+    connect(_googleReader, SIGNAL(signalStatusAddFeedLabel(bool)),
             this, SLOT(statusAddFeedLabel(bool)));
-    connect(googleReader, SIGNAL(signalStatusRemoveFeedLabel(bool)),
+    connect(_googleReader, SIGNAL(signalStatusRemoveFeedLabel(bool)),
             this, SLOT(statusRemoveFeedLabel(bool)));
-    connect(googleReader, SIGNAL(signalStatusAddFeed(bool)),
+    connect(_googleReader, SIGNAL(signalStatusAddFeed(bool)),
             this, SLOT(statusAddFeed(bool)));
-    connect(googleReader, SIGNAL(signalStatusRemoveFeed(bool)),
+    connect(_googleReader, SIGNAL(signalStatusRemoveFeed(bool)),
             this, SLOT(statusRemoveFeed(bool)));
 }
 
@@ -35,14 +36,14 @@ GoogleReaderController::GoogleReaderController() {
 \brief
 */
 int GoogleReaderController::getUnreadCountInLabel(QString label) {
-    return database->getUnreadCountInLabel(label);
+    return _database->getUnreadCountInLabel(label);
 }
 
 /*!
 \brief
 */
 int GoogleReaderController::getUnreadCountInFeed(QString feedName) {
-    return database->getUnreadCountInFeed(feedName);
+    return _database->getUnreadCountInFeed(feedName);
 }
 
 /*!
@@ -50,11 +51,11 @@ int GoogleReaderController::getUnreadCountInFeed(QString feedName) {
 */
 void GoogleReaderController::markLabelAsRead(QString labelName) {
 
-    QList<QString> feedsInLabel = database->getFeedsInLabel(labelName);
+    QList<QString> feedsInLabel = _database->getFeedsInLabel(labelName);
 
     foreach (QString feedId, feedsInLabel) {
-        googleReader->markFeedAsRead(feedId);
-        database->markFeedAsRead(feedId);
+        _googleReader->markFeedAsRead(feedId);
+        _database->markFeedAsRead(feedId);
     }
 }
 
@@ -63,8 +64,8 @@ void GoogleReaderController::markLabelAsRead(QString labelName) {
 */
 void GoogleReaderController::markFeedAsRead(QString feedId) {
 
-    googleReader->markFeedAsRead(feedId);
-    database->markFeedAsRead(feedId);
+    _googleReader->markFeedAsRead(feedId);
+    _database->markFeedAsRead(feedId);
 }
 
 /*!
@@ -72,13 +73,13 @@ void GoogleReaderController::markFeedAsRead(QString feedId) {
 */
 void GoogleReaderController::markEntryAsRead(QString entryId) {
 
-    googleReader->markEntryAsRead(entryId);
-    database->markEntryAsRead(entryId);
+    _googleReader->markEntryAsRead(entryId);
+    _database->markEntryAsRead(entryId);
 }
 
 void GoogleReaderController::markAllAsRead()
 {
-    foreach (Feed* feed, database->getDatabase())
+    foreach (Feed* feed, _database->getDatabase())
     {
         if (feed->getUnreadCount() > 0)
             this->markFeedAsRead(feed->getId());
@@ -89,150 +90,159 @@ void GoogleReaderController::markAllAsRead()
 \brief
 */
 QList<QString> GoogleReaderController::getLabelsList() {
-    return database->getLabelsList();
+    return _database->getLabelsList();
 }
 
 /*!
 \brief
 */
 QString GoogleReaderController::getIdForFeed(QString feedName) {
-    return database->getIdForFeed(feedName);
+    return _database->getIdForFeed(feedName);
 }
 
 /*!
 \brief
 */
 QString GoogleReaderController::getEntryLink(QString entryId) {
-    return database->getEntryLink(entryId);
+    return _database->getEntryLink(entryId);
 }
 
 /*!
 \brief
 */
 Entry* GoogleReaderController::getEntry(QString entryId) {
-    return database->getEntry(entryId);
+    return _database->getEntry(entryId);
 }
 
 /*!
 \brief
 */
 QString GoogleReaderController::getFeedIdForEntry(QString entryId) {
-    return database->getFeedIdForEntry(entryId);
+    return _database->getFeedIdForEntry(entryId);
 }
 
 void GoogleReaderController::login(QString username, QString password) {
 
-    googleReader->login(username, password);
+    _googleReader->login(username, password);
 }
 
 void GoogleReaderController::login() {
 
-    googleReader->login();
+    _googleReader->login();
 }
 
 void GoogleReaderController::getFeeds() {
 
-    googleReader->getFeeds();
+    _googleReader->getFeeds();
 }
 
 void GoogleReaderController::rawGetFeeds(QByteArray rawFeeds) {
-    database->addFeeds(rawFeeds);
+    _database->addFeeds(rawFeeds);
     this->getUnreadFeeds();
 }
 
 void GoogleReaderController::getUnreadFeeds() {
 
-    googleReader->getUnreadFeeds();
+    _googleReader->getUnreadFeeds();
 }
 
 void GoogleReaderController::rawGetUnreadFeeds(QByteArray rawFeeds) {
-    database->addUnreadFeeds(rawFeeds);
+    _database->addUnreadFeeds(rawFeeds);
     this->checkIfFetchEntries();
 }
 
 int GoogleReaderController::getTotalUnreadCount() {
-    return database->getTotalUnreadCount();
+    return _database->getTotalUnreadCount();
 }
 
 void GoogleReaderController::checkIfFetchEntries() {
-    alreadyFetchingNoEntries = false;
-    if (!firstRun) {
-        if (database->getTotalUnreadCount() > 0) {
+    _alreadyFetchingNoEntries = false;
+    if (!_firstRun) {
+        if (_database->getTotalUnreadCount() > 0) {
             qDebug() << "There are new entries, get them";
             this->getEntries();
         }
         else {
             qDebug() << "There are no new etries";
-//            emit signalStatusGetEntries(false);
             return;
         }
     } else {
         qDebug() << "First run of GooDer -> getting all entries";
-        firstRun = false;
+        _firstRun = false;
         this->getEntries();
     }
 }
 
 void GoogleReaderController::getEntries() {
-    googleReader->getEntries();
+    _googleReader->getEntries();
 }
 
 void GoogleReaderController::getSpecifiedNumberOfEntriesFromFeed(QString feedId, int count) {
-    googleReader->getNumberOfEntriesFromFeed(feedId, count);
+    _fetchingEntriesFromHistory = true;
+    _googleReader->getNumberOfEntriesFromFeed(feedId, count);
 }
 
 void GoogleReaderController::fetchFeedsWithNoEntries() {
 
-    cnt = 0;
-    alreadyFetchingNoEntries = true;
+    _feedsWithNoEntriesCount = 0;
+    _alreadyFetchingNoEntries = true;
 
     foreach (Feed* feed, this->getFeedsFromDatabase())
+    {
         if (feed->getEntriesList().count() == 0)
         {
-            cnt++;
+            _feedsWithNoEntriesCount++;
             getSpecifiedNumberOfEntriesFromFeed(feed->getId(), 5);
         }
+    }
 }
 
 void GoogleReaderController::rawGetEntries(QByteArray rawEntries) {
-    database->addEntries(rawEntries);
+    _database->addEntries(rawEntries);
 
-    if (!alreadyFetchingNoEntries)
+    if (!_alreadyFetchingNoEntries)
         fetchFeedsWithNoEntries();
 
-    if (cnt >= 0)
+    if (_feedsWithNoEntriesCount >= 0)
     {
-        if (--cnt < 0)
+        if (--_feedsWithNoEntriesCount < 0)
         {
             emit signalStatusGetEntries(true);
         }
+        _fetchingEntriesFromHistory = false;
     }
 
-    firstRun = false;
+    _firstRun = false;
+
+    if (_fetchingEntriesFromHistory)
+    {
+        _fetchingEntriesFromHistory = false;
+        emit signalStatusGetEntries(true);
+    }
 }
 
 void GoogleReaderController::addFeedLabel(QString feedId, QString labelName) {
-    googleReader->addFeedLabel(feedId, labelName);
-    database->addFeedLabel(feedId, labelName);
+    _googleReader->addFeedLabel(feedId, labelName);
+    _database->addFeedLabel(feedId, labelName);
 }
 
 void GoogleReaderController::removeFeedLabel(QString feedId, QString labelName) {
-    googleReader->removeFeedLabel(feedId, labelName);
-    database->removeFeedLabel(feedId, labelName);
+    _googleReader->removeFeedLabel(feedId, labelName);
+    _database->removeFeedLabel(feedId, labelName);
 }
 
 void GoogleReaderController::addFeed(QString address, QString name, QString label) {
-    googleReader->addFeed(address, name, label);
+    _googleReader->addFeed(address, name, label);
     this->getFeeds();
 }
 
 void GoogleReaderController::removeFeed(QString feedId) {
-    googleReader->removeFeed(feedId);
-    database->removeFeed(feedId);
+    _googleReader->removeFeed(feedId);
+    _database->removeFeed(feedId);
 }
 
 QList<Feed*> GoogleReaderController::getFeedsFromDatabase() {
-    return database->getDatabase();
+    return _database->getDatabase();
 }
 
 /******************************************************************************

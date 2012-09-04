@@ -7,7 +7,7 @@
 VerticalButton::VerticalButton(QWidget* parent)
     : QPushButton(parent)
 {
-    orientation = Qt::Vertical;
+    _orientation = Qt::Vertical;
 }
 
 /*!
@@ -16,7 +16,7 @@ VerticalButton::VerticalButton(QWidget* parent)
 VerticalButton::VerticalButton(const QString& text, QWidget* parent)
     : QPushButton(text, parent)
 {
-    orientation = Qt::Vertical;
+    _orientation = Qt::Vertical;
 }
 
 /*!
@@ -34,6 +34,8 @@ QSize VerticalButton::minimumSizeHint() const
 */
 void VerticalButton::paintEvent(QPaintEvent* event)
 {
+    Q_UNUSED(event);
+
     QStylePainter painter(this);
     QStyleOptionButton options;
 

@@ -33,7 +33,7 @@
     <attribute name="title">
      <string>Google Reader</string>
     </attribute>
-    <widget class="QWidget" name="layoutWidget">
+    <widget class="QWidget" name="layoutWidget2">
      <property name="geometry">
       <rect>
        <x>11</x>
@@ -222,7 +222,7 @@
     <attribute name="title">
      <string>Klávesové zkratky</string>
     </attribute>
-    <widget class="QWidget" name="layoutWidget">
+    <widget class="QWidget" name="layoutWidget1">
      <property name="geometry">
       <rect>
        <x>10</x>

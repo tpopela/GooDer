@@ -10,27 +10,29 @@
 SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent) {
     ui.setupUi(this);
 
-    settings = new QSettings("GooDer", "GooDer");
+    _settings = new QSettings("GooDer", "GooDer");
+    _crypt = new SimpleCrypt(Q_UINT64_C(0x0c2ac1a5cea3fe23));
 
-    ui.lineUsername->setText(settings->value("username").toString());
-    ui.linePassword->setText(settings->value("password").toString());
-    ui.timeCheckFeeds->setValue(settings->value("checkFeedTime", 300000).toInt()/60000);
+    ui.lineUsername->setText(_settings->value("username").toString());
+    if (!_settings->value("password").toString().isNull())
+        ui.linePassword->setText(_crypt->decryptToString(_settings->value("password").toString()));
+    ui.timeCheckFeeds->setValue(_settings->value("checkFeedTime", 300000).toInt()/60000);
 
-    if (settings->value("toolbar", true).toBool()) ui.showToolbar->setChecked(true);
-    if (settings->value("autoHideFeedPanel", true).toBool()) ui.autoHideFeedPanel->setChecked(true);
-    if (settings->value("menuVisibility", true).toBool()) ui.showMenu->setChecked(true);
-    if (settings->value("flash", true).toBool()) ui.flashOnOff->setChecked(true);
-    if (settings->value("showSummary", true).toBool()) ui.showSummary->setChecked(true);
+    if (_settings->value("toolbar", true).toBool()) ui.showToolbar->setChecked(true);
+    if (_settings->value("autoHideFeedPanel", true).toBool()) ui.autoHideFeedPanel->setChecked(true);
+    if (_settings->value("menuVisibility", true).toBool()) ui.showMenu->setChecked(true);
+    if (_settings->value("flash", true).toBool()) ui.flashOnOff->setChecked(true);
+    if (_settings->value("showSummary", true).toBool()) ui.showSummary->setChecked(true);
 
-    ui.shortNextEntry->setText(settings->value("shortcutNextEntry", "Meta+.").toString());
-    ui.shortPrevEntry->setText(settings->value("shortcutPrevEntry", "Meta+,").toString());
-    ui.shortNextFeed->setText(settings->value("shortcutNextFeed", "Meta+'").toString());
-    ui.shortPrevFeed->setText(settings->value("shortcutPrevFeed", "Meta+;").toString());
-    ui.shortNextLabel->setText(settings->value("shortcutNextLabel", "Meta+]").toString());
-    ui.shortPrevLabel->setText(settings->value("shortcutPrevLabel", "Meta+[").toString());
-    ui.shortShowHideFeedList->setText(settings->value("shortcutToggleFeedPanel", "Meta+\\").toString());
+    ui.shortNextEntry->setText(_settings->value("shortcutNextEntry", "Meta+.").toString());
+    ui.shortPrevEntry->setText(_settings->value("shortcutPrevEntry", "Meta+,").toString());
+    ui.shortNextFeed->setText(_settings->value("shortcutNextFeed", "Meta+'").toString());
+    ui.shortPrevFeed->setText(_settings->value("shortcutPrevFeed", "Meta+;").toString());
+    ui.shortNextLabel->setText(_settings->value("shortcutNextLabel", "Meta+]").toString());
+    ui.shortPrevLabel->setText(_settings->value("shortcutPrevLabel", "Meta+[").toString());
+    ui.shortShowHideFeedList->setText(_settings->value("shortcutToggleFeedPanel", "Meta+\\").toString());
 
-    //nainstaluji filtry
+    //install filters for keyboard shortcuts
     ui.shortNextEntry->installEventFilter(this);
     ui.shortNextFeed->installEventFilter(this);
     ui.shortNextLabel->installEventFilter(this);
@@ -49,31 +51,31 @@ void SettingsDialog::done(int ready) {
     if (ready == QDialog::Accepted) {
         //zkontroluji zadane udaje
         if (ui.lineUsername->text().isEmpty() || ui.linePassword->text().isEmpty() || ui.timeCheckFeeds->value() < 1) {
-            QMessageBox::information(0, trUtf8("Chyba"), trUtf8("Zadejte všechny potřebné údaje!"));
+            QMessageBox::information(0, trUtf8("Error"), trUtf8("Please fill all required informations!"));
             return;
         }
         else if (ui.shortNextEntry->text().isEmpty() || ui.shortNextFeed->text().isEmpty() || ui.shortNextLabel->text().isEmpty()
             || ui.shortPrevEntry->text().isEmpty() || ui.shortPrevFeed->text().isEmpty() || ui.shortPrevLabel->text().isEmpty() || ui.shortShowHideFeedList->text().isEmpty()) {
-            QMessageBox::information(0, trUtf8("Chyba"), trUtf8("Nadefinujte všechny klávesové zkratky!"));
+            QMessageBox::information(0, trUtf8("Error"), trUtf8("Please define all keybord shortcuts!"));
             return;
         }
         //vratim vysledky
         else {
-            settings->setValue("username", ui.lineUsername->text());
-            settings->setValue("password", ui.linePassword->text());
-            settings->setValue("checkFeedTime", ui.timeCheckFeeds->text().toInt()*60000);
-            settings->setValue("toolbar", ui.showToolbar->isChecked());
-            settings->setValue("autoHideFeedPanel", ui.autoHideFeedPanel->isChecked());
-            settings->setValue("menuVisibility", ui.showMenu->isChecked());
-            settings->setValue("flash", ui.flashOnOff->isChecked());
-            settings->setValue("showSummary", ui.showSummary->isChecked());
-            settings->setValue("shortcutNextEntry", ui.shortNextEntry->text().remove(" "));
-            settings->setValue("shortcutPrevEntry", ui.shortPrevEntry->text().remove(" "));
-            settings->setValue("shortcutNextFeed", ui.shortNextFeed->text().remove(" "));
-            settings->setValue("shortcutPrevFeed", ui.shortPrevFeed->text().remove(" "));
-            settings->setValue("shortcutNextLabel", ui.shortNextLabel->text().remove(" "));
-            settings->setValue("shortcutPrevLabel", ui.shortPrevLabel->text().remove(" "));
-            settings->setValue("shortcutToggleFeedPanel", ui.shortShowHideFeedList->text().remove(" "));
+            _settings->setValue("username", ui.lineUsername->text());
+            _settings->setValue("password", _crypt->encryptToString(ui.linePassword->text()));
+            _settings->setValue("checkFeedTime", ui.timeCheckFeeds->text().toInt()*60000);
+            _settings->setValue("toolbar", ui.showToolbar->isChecked());
+            _settings->setValue("autoHideFeedPanel", ui.autoHideFeedPanel->isChecked());
+            _settings->setValue("menuVisibility", ui.showMenu->isChecked());
+            _settings->setValue("flash", ui.flashOnOff->isChecked());
+            _settings->setValue("showSummary", ui.showSummary->isChecked());
+            _settings->setValue("shortcutNextEntry", ui.shortNextEntry->text().remove(" "));
+            _settings->setValue("shortcutPrevEntry", ui.shortPrevEntry->text().remove(" "));
+            _settings->setValue("shortcutNextFeed", ui.shortNextFeed->text().remove(" "));
+            _settings->setValue("shortcutPrevFeed", ui.shortPrevFeed->text().remove(" "));
+            _settings->setValue("shortcutNextLabel", ui.shortNextLabel->text().remove(" "));
+            _settings->setValue("shortcutPrevLabel", ui.shortPrevLabel->text().remove(" "));
+            _settings->setValue("shortcutToggleFeedPanel", ui.shortShowHideFeedList->text().remove(" "));
 
             emit settingsData();
             QDialog::done(ready);
@@ -92,7 +94,10 @@ void SettingsDialog::done(int ready) {
 */
 bool SettingsDialog::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == ui.shortNextEntry || obj == ui.shortPrevEntry || obj == ui.shortNextLabel || obj == ui.shortPrevLabel || obj == ui.shortNextFeed || obj == ui.shortPrevFeed || obj == ui.shortShowHideFeedList) {
+    if (obj == ui.shortNextEntry || obj == ui.shortPrevEntry ||
+        obj == ui.shortNextLabel || obj == ui.shortPrevLabel ||
+        obj == ui.shortNextFeed || obj == ui.shortPrevFeed ||
+        obj == ui.shortShowHideFeedList) {
         if (event->type() == QEvent::KeyPress) {
             QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
             if (keyEvent->key() == Qt::Key_Control) {

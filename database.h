@@ -12,34 +12,33 @@ public:
 
     int getUnreadCountInLabel(QString);
     int getUnreadCountInFeed(QString);
+    int getTotalUnreadCount() { return _numberOfNewEntries; }
+
     void markFeedAsRead(QString);
     void markEntryAsRead(QString);
     void markLabelAsRead(QString);
     void removeFeed(QString);
     void addFeedLabel(QString, QString);
     void removeFeedLabel(QString, QString);
-    QList<QString> getFeedsInLabel(QString);
-    QList<QString> getLabelsList();
     void setNumberOfNewEntries(QString, int);
-    QString getIdForFeed(QString);
-    QString getEntryLink(QString);
-    Entry* getEntry(QString);
-    QString getFeedIdForEntry(QString);
     void addFeeds(QByteArray);
     void addEntries(QByteArray);
     void addUnreadFeeds(QByteArray);
-    int getTotalUnreadCount() { return numberOfNewEntries; }
-    QList<Feed*> getDatabase() { return storage; }
+
+    QString getIdForFeed(QString);
+    QString getEntryLink(QString);
+    QString getFeedIdForEntry(QString);
+
+    Entry* getEntry(QString);
+
+    QList<Feed*> getDatabase() { return _storage; }
+    QList<QString> getFeedsInLabel(QString);
+    QList<QString> getLabelsList();
 
 private:
-    int numberOfNewEntries;
+    int _numberOfNewEntries;
 
-    QList<Feed*> storage;
-
-
-signals:
-
-public slots:
+    QList<Feed*> _storage;
 
 };
 

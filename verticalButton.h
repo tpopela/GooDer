@@ -15,7 +15,7 @@ protected:
     void paintEvent(QPaintEvent* event);
 
 private:
-    Qt::Orientation orientation;
+    Qt::Orientation _orientation;
 };
 
 #endif // VERTICALBUTTON_H

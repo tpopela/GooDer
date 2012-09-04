@@ -4,40 +4,44 @@
 \brief Vychozi konstuktor
 */
 Entry::Entry() {
-    title = "";
-    link = "";
-    published.setDate(QDate(0,0,0));
-    id = "";
-    author = "";
-    summary = "";
-    f_read = true;
+    _title = "";
+    _link = "";
+    _published.setDate(QDate(0,0,0));
+    _id = "";
+    _author = "";
+    _summary = "";
+    _alreadyRead = true;
 }
 
 /*!
 \brief Konstruktor s naplnenim dat
 */
-Entry::Entry(QString p_title, QString p_published, QString p_link, QString p_id, QString p_author, bool p_read) {
+Entry::Entry(QString title, QString published, QString link, QString id,
+    QString author, bool alreadyRead) {
+
     QString format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
-    title = p_title;
-    published = QDateTime::fromString(p_published, format);
-    link = p_link;
-    id = p_id;
-    f_read = p_read;
-    author = p_author;
+    _title = title;
+    _published = QDateTime::fromString(published, format);
+    _link = link;
+    _id = id;
+    _alreadyRead = alreadyRead;
+    _author = author;
 }
 
 /*!
 \brief Konstruktor s naplnenim dat
 */
-Entry::Entry(QString p_title, QString p_published, QString p_link, QString p_id, QString p_author, QString p_summary, bool p_read) {
+Entry::Entry(QString title, QString published, QString link, QString id,
+    QString author, QString summary, bool alreadyRead) {
+
     QString format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
-    title = p_title;
-    published = QDateTime::fromString(p_published, format);
-    link = p_link;
-    id = p_id;
-    f_read = p_read;
-    author = p_author;
-    summary = p_summary;
+    _title = title;
+    _published = QDateTime::fromString(published, format);
+    _link = link;
+    _id = id;
+    _alreadyRead = alreadyRead;
+    _author = author;
+    _summary = summary;
 }

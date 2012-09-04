@@ -14,11 +14,11 @@
 \brief Vychozi konstruktor
 */
 GoogleReader::GoogleReader() {
-    googleCookie = new QNetworkCookie();
+    _googleCookie = new QNetworkCookie();
     // Session ID expires in about 20 minutes
-    timerRefreshSID = new QTimer(this);
+    _timerRefreshSessionID = new QTimer(this);
 
-    connect(timerRefreshSID, SIGNAL(timeout()),
+    connect(_timerRefreshSessionID, SIGNAL(timeout()),
             this, SLOT(refreshSID()));
 }
 
@@ -31,11 +31,11 @@ GoogleReader::GoogleReader() {
 /*!
 \brief Login to Google Reader
 */
-void GoogleReader::login(QString p_username, QString p_password) {
+void GoogleReader::login(QString username, QString password) {
     qDebug() << "GoogleReader::login(username, password)";
 
-    this->username = p_username;
-    this->password = p_password;
+    this->_username = username;
+    this->_password = password;
 
     this->makeLogin();
 }
@@ -58,15 +58,15 @@ void GoogleReader::refreshSID() {
 */
 void GoogleReader::makeLogin() {
 
-    if (this->username.isEmpty() && this->password.isEmpty()) {
+    if (this->_username.isEmpty() && this->_password.isEmpty()) {
         return;
     }
 
-    qDebug() << "Login with username: " << this->username;
+    qDebug() << "Login with username: " << this->_username;
     QNetworkAccessManager* connectionLogin = new QNetworkAccessManager(this);
 
     QString url = "https://www.google.com/accounts/ClientLogin";
-    QString postData = QString("service=reader&Email=%1&Passwd=%2&Source=GooDer").arg(this->username, this->password);
+    QString postData = QString("service=reader&Email=%1&Passwd=%2&Source=GooDer").arg(this->_username, this->_password);
     QNetworkRequest postRequest = QNetworkRequest(QUrl(url));
 
     postRequest.setRawHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -105,8 +105,8 @@ void GoogleReader::parseSessionID(QNetworkReply* reply) {
     if (SIDReply.contains("Auth=")) {
         int startOfSID = SIDReply.indexOf("Auth=")+5;
         QString tempSID = SIDReply.mid(startOfSID);
-        sessionID = tempSID.left(tempSID.length()-1);
-        qDebug() << "Session ID: " << sessionID;
+        _sessionID = tempSID.left(tempSID.length()-1);
+        qDebug() << "Session ID: " << _sessionID;
 
         this->getToken();
     }
@@ -119,10 +119,10 @@ void GoogleReader::setCookie() {
     qDebug() << "GoogleReader::setCookie()";
 
     QString strTokenRequest = "GoogleLogin auth=";
-    strTokenRequest.append(sessionID);
+    strTokenRequest.append(_sessionID);
 
-    googleCookie->setName("Authorization");
-    googleCookie->setValue(strTokenRequest.toAscii());
+    _googleCookie->setName("Authorization");
+    _googleCookie->setValue(strTokenRequest.toAscii());
 }
 
 /*!
@@ -134,7 +134,7 @@ void GoogleReader::getToken() {
     this->setCookie();
 
     QNetworkRequest tokenRequest = QNetworkRequest(QUrl("http://www.google.com/reader/api/0/token"));
-    tokenRequest.setRawHeader("Authorization", googleCookie->value());
+    tokenRequest.setRawHeader("Authorization", _googleCookie->value());
     QNetworkAccessManager* connectionToken = new QNetworkAccessManager(this);
 
     connect(connectionToken, SIGNAL(finished(QNetworkReply*)),
@@ -160,13 +160,13 @@ void GoogleReader::parseToken(QNetworkReply* reply) {
     }
 
     //ulozime si token
-    googleToken = reply->readAll();
-    qDebug() << "Token: " << googleToken;
+    _googleToken = reply->readAll();
+    qDebug() << "Token: " << _googleToken;
 
     emit signalConnected(true);
 
     // Session ID expires in about 20 minutes
-    timerRefreshSID->start(1820000);
+    _timerRefreshSessionID->start(1820000);
 
     emit signalStatusLogin(true);
 }
@@ -183,7 +183,7 @@ void GoogleReader::parseToken(QNetworkReply* reply) {
 void GoogleReader::getFeeds() {
     qDebug() << "GoogleReader::getFeeds()";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
@@ -192,7 +192,7 @@ void GoogleReader::getFeeds() {
 
     QString feedUrl = QString("http://www.google.com/reader/api/0/subscription/list?output=xml");
     QNetworkRequest getRequest= QNetworkRequest(QUrl(feedUrl));
-    getRequest.setRawHeader("Authorization", googleCookie->value());
+    getRequest.setRawHeader("Authorization", _googleCookie->value());
 
     connect(managerGetFeeds, SIGNAL(finished(QNetworkReply*)), this, SLOT(parseFeeds(QNetworkReply*)));
 
@@ -223,7 +223,7 @@ void GoogleReader::parseFeeds(QNetworkReply* source) {
 void GoogleReader::getUnreadFeeds() {
     qDebug() << "GoogleReader::getUnreadFeeds()";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
@@ -234,7 +234,7 @@ void GoogleReader::getUnreadFeeds() {
     QString feedUrl = QString("http://www.google.com/reader/api/0/unread-count?allcomments=true&output=xml&ck=%1&client=googleReader").arg(unixTime);
 
     QNetworkRequest getRequest= QNetworkRequest(QUrl(feedUrl));
-    getRequest.setRawHeader("Authorization", googleCookie->value());
+    getRequest.setRawHeader("Authorization", _googleCookie->value());
 
     managerGetUnreadFeeds->get(getRequest);
 
@@ -271,7 +271,7 @@ void GoogleReader::parseUnreadFeeds(QNetworkReply* source) {
 void GoogleReader::getEntries() {
     qDebug() << "GoogleReader::getEntries()";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
@@ -283,7 +283,7 @@ void GoogleReader::getEntries() {
     feedUrl = QString("http://www.google.com/reader/atom/user/-/state/com.google/reading-list?n=%1").arg(numberOfEntries);
 
     QNetworkRequest getRequest= QNetworkRequest(QUrl(feedUrl));
-    getRequest.setRawHeader("Authorization", googleCookie->value());
+    getRequest.setRawHeader("Authorization", _googleCookie->value());
 
     connect(managerGetEntriesList, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(parseEntries(QNetworkReply*)));
@@ -294,19 +294,19 @@ void GoogleReader::getEntries() {
 /*!
 \brief Get specified number of entries from specified feed
 */
-void GoogleReader::getNumberOfEntriesFromFeed(QString p_feedId, int p_count) {
-    qDebug() << "GoogleReader::getAllEntriesFromFeed(" << p_feedId << "," << p_count << ")";
+void GoogleReader::getNumberOfEntriesFromFeed(QString feedId, int count) {
+    qDebug() << "GoogleReader::getAllEntriesFromFeed(" << feedId << "," << count << ")";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
 
     QNetworkAccessManager* managerGetAllEntriesFromFeed = new QNetworkAccessManager(this);
 
-    QString feedUrl = QString("http://www.google.com/reader/atom/feed/%1?n=%2").arg(p_feedId, QString::number(p_count));
+    QString feedUrl = QString("http://www.google.com/reader/atom/feed/%1?n=%2").arg(feedId, QString::number(count));
     QNetworkRequest getRequest= QNetworkRequest(QUrl(feedUrl));
-    getRequest.setRawHeader("Authorization", googleCookie->value());
+    getRequest.setRawHeader("Authorization", _googleCookie->value());
 
     connect(managerGetAllEntriesFromFeed, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(parseEntries(QNetworkReply*)));
@@ -327,8 +327,8 @@ void GoogleReader::parseEntries(QNetworkReply *source) {
         emit signalStatusGetEntries(false);
     }
 
-    emit signalStatusGetEntries(true);
     emit shareRawEntries(source->readAll());
+    emit signalStatusGetEntries(true);
 }
 
 /******************************************************************************
@@ -340,10 +340,10 @@ void GoogleReader::parseEntries(QNetworkReply *source) {
 /*!
 \brief Mark feeds as read
 */
-void GoogleReader::markFeedAsRead(QString p_id_stream) {
-    qDebug() << "GoogleReader->markFeedAsRead(" << p_id_stream << ")";
+void GoogleReader::markFeedAsRead(QString id_stream) {
+    qDebug() << "GoogleReader->markFeedAsRead(" << id_stream << ")";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
@@ -352,10 +352,10 @@ void GoogleReader::markFeedAsRead(QString p_id_stream) {
 
     QString url = "http://www.google.com/reader/api/0/mark-all-as-read";
     QString unixTimeMS = QString::number((getUnixTime()));
-    QString postData = QString("s=feed/%1&ts=%2&T=%3").arg(QUrl::toPercentEncoding(p_id_stream), unixTimeMS, googleToken);
+    QString postData = QString("s=feed/%1&ts=%2&T=%3").arg(QUrl::toPercentEncoding(id_stream), unixTimeMS, _googleToken);
 
     QNetworkRequest postRequest = QNetworkRequest(QUrl(url));
-    postRequest.setRawHeader("Authorization", googleCookie->value());
+    postRequest.setRawHeader("Authorization", _googleCookie->value());
     postRequest.setRawHeader("Content-Type", "application/x-www-form-urlencoded");
 
     connect(managerMarkAllAsRead, SIGNAL(finished(QNetworkReply*)),
@@ -367,12 +367,12 @@ void GoogleReader::markFeedAsRead(QString p_id_stream) {
 /*!
 \brief Parses respond for marking feed as read
 */
-void GoogleReader::parseRespondeMarkFeedAsRead(QNetworkReply* p_reply) {
+void GoogleReader::parseRespondeMarkFeedAsRead(QNetworkReply* reply) {
     qDebug() << "GoogleReader::parseRespondeMarkFeedAsRead()";
 
-    p_reply->deleteLater();
-    if (p_reply->readAll() != "OK") {
-        qDebug() << p_reply->readAll();
+    reply->deleteLater();
+    if (reply->readAll() != "OK") {
+        qDebug() << reply->readAll();
         emit signalStatusMarkFeedAsRead(false);
         return;
     }
@@ -381,12 +381,12 @@ void GoogleReader::parseRespondeMarkFeedAsRead(QNetworkReply* p_reply) {
 }
 
 /*!
-\brief Marks entry (p_id) as read
+\brief Marks entry (id) as read
 */
-void GoogleReader::markEntryAsRead(QString p_id) {
-    qDebug() << "GoogleReader::markEntryAsRead(" << p_id << ")";
+void GoogleReader::markEntryAsRead(QString id) {
+    qDebug() << "GoogleReader::markEntryAsRead(" << id << ")";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
@@ -394,10 +394,10 @@ void GoogleReader::markEntryAsRead(QString p_id) {
     QNetworkAccessManager * managerMarkEntryAsRead = new QNetworkAccessManager(this);
 
     QString url = "http://www.google.com/reader/api/0/edit-tag?client=GooDer";
-    QString postData = QString("i=%1&a=user/-/state/com.google/read&ac=edit&T=%2").arg(p_id, googleToken);
+    QString postData = QString("i=%1&a=user/-/state/com.google/read&ac=edit&T=%2").arg(id, _googleToken);
 
     QNetworkRequest postRequest = QNetworkRequest(QUrl(url));
-    postRequest.setRawHeader("Authorization", googleCookie->value());
+    postRequest.setRawHeader("Authorization", _googleCookie->value());
     postRequest.setRawHeader("Content-Type", "application/x-www-form-urlencoded");
 
     connect(managerMarkEntryAsRead, SIGNAL(finished(QNetworkReply*)),
@@ -409,12 +409,12 @@ void GoogleReader::markEntryAsRead(QString p_id) {
 /*!
 \brief Parses responde for marking entry as read
 */
-void GoogleReader::parseMarkEntryAsRead(QNetworkReply* p_reply) {
-    p_reply->deleteLater();
+void GoogleReader::parseMarkEntryAsRead(QNetworkReply* reply) {
+    reply->deleteLater();
 
-    if (p_reply->readAll() != "OK") {
+    if (reply->readAll() != "OK") {
         qDebug() << "Error during marking entry as read";
-        qDebug() << p_reply->readAll();
+        qDebug() << reply->readAll();
         emit signalStatusMarkEntryAsRead(false);
         return;
     }
@@ -425,10 +425,10 @@ void GoogleReader::parseMarkEntryAsRead(QNetworkReply* p_reply) {
 /*!
 \brief Adds label for feed
 */
-void GoogleReader::addFeedLabel(QString p_id, QString p_label) {
-    qDebug() << "GoogleReader::addFeedLabel(" << p_id << "," << p_label << ")";
+void GoogleReader::addFeedLabel(QString id, QString label) {
+    qDebug() << "GoogleReader::addFeedLabel(" << id << "," << label << ")";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
@@ -436,10 +436,10 @@ void GoogleReader::addFeedLabel(QString p_id, QString p_label) {
     QNetworkAccessManager * managerAddLabel = new QNetworkAccessManager(this);
 
     QString url = "http://www.google.com/reader/api/0/subscription/edit?client=GooDer";
-    QString postData = QString("s=feed/%1&ac=edit&a=user/-/label/%2&T=%3").arg(p_id, p_label, googleToken);
+    QString postData = QString("s=feed/%1&ac=edit&a=user/-/label/%2&T=%3").arg(id, label, _googleToken);
 
     QNetworkRequest postRequest = QNetworkRequest(QUrl(url));
-    postRequest.setRawHeader("Authorization", googleCookie->value());
+    postRequest.setRawHeader("Authorization", _googleCookie->value());
     postRequest.setRawHeader("Content-Type", "application/x-www-form-urlencoded");
 
     connect(managerAddLabel, SIGNAL(finished(QNetworkReply*)),
@@ -451,13 +451,13 @@ void GoogleReader::addFeedLabel(QString p_id, QString p_label) {
 /*!
 \brief Parses responde for adding feed label request
 */
-void GoogleReader::parseAddFeedLabel(QNetworkReply* p_reply) {
+void GoogleReader::parseAddFeedLabel(QNetworkReply* reply) {
     qDebug() << "GoogleReader::parseAddFeedLabel()";
 
-    p_reply->deleteLater();
+    reply->deleteLater();
 
-    if (p_reply->readAll() != "OK") {
-        qDebug() << p_reply->readAll();
+    if (reply->readAll() != "OK") {
+        qDebug() << reply->readAll();
         emit signalStatusAddFeedLabel(false);
         return;
     }
@@ -468,10 +468,10 @@ void GoogleReader::parseAddFeedLabel(QNetworkReply* p_reply) {
 /*!
 \brief Remove label from feed
 */
-void GoogleReader::removeFeedLabel(QString p_id, QString p_label) {
-    qDebug() << "GoogleReader::removeFeedLabel(" << p_id << "," << p_label << ")";
+void GoogleReader::removeFeedLabel(QString id, QString label) {
+    qDebug() << "GoogleReader::removeFeedLabel(" << id << "," << label << ")";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
@@ -479,10 +479,10 @@ void GoogleReader::removeFeedLabel(QString p_id, QString p_label) {
     QNetworkAccessManager * managerRemoveFeedLabel = new QNetworkAccessManager(this);
 
     QString url = "http://www.google.com/reader/api/0/subscription/edit?client=GooDer";
-    QString postData = QString("s=feed/%1&ac=edit&r=user/-/label/%2&T=%3").arg(p_id, p_label, googleToken);
+    QString postData = QString("s=feed/%1&ac=edit&r=user/-/label/%2&T=%3").arg(id, label, _googleToken);
 
     QNetworkRequest postRequest = QNetworkRequest(QUrl(url));
-    postRequest.setRawHeader("Authorization", googleCookie->value());
+    postRequest.setRawHeader("Authorization", _googleCookie->value());
     postRequest.setRawHeader("Content-Type", "application/x-www-form-urlencoded");
 
     connect(managerRemoveFeedLabel, SIGNAL(finished(QNetworkReply*)),
@@ -494,13 +494,13 @@ void GoogleReader::removeFeedLabel(QString p_id, QString p_label) {
 /*!
 \brief Parses responde for removing feed label request
 */
-void GoogleReader::parseRemoveFeedLabel(QNetworkReply* p_reply) {
+void GoogleReader::parseRemoveFeedLabel(QNetworkReply* reply) {
     qDebug() << "GoogleReader::parseRemoveFeedLabel()";
 
-    p_reply->deleteLater();
+    reply->deleteLater();
 
-    if (p_reply->readAll() != "OK") {
-        qDebug() << p_reply->readAll();
+    if (reply->readAll() != "OK") {
+        qDebug() << reply->readAll();
         emit signalStatusRemoveFeedLabel(false);
         return;
     }
@@ -511,34 +511,34 @@ void GoogleReader::parseRemoveFeedLabel(QNetworkReply* p_reply) {
 /*!
 \brief Subscribe new feed
 */
-void GoogleReader::addFeed(QString p_address, QString p_name, QString p_label) {
-    qDebug() << "GoogleReader::addFeed(" << p_address << "," << p_name << "," << p_label << ")";
+void GoogleReader::addFeed(QString address, QString name, QString label) {
+    qDebug() << "GoogleReader::addFeed(" << address << "," << name << "," << label << ")";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
 
-    if (p_address.left(7) != "http://")
-        p_address.insert(0, "http://");
+    if (address.left(7) != "http://")
+        address.insert(0, "http://");
 
     QString url = "http://www.google.com/reader/api/0/subscription/edit?client=GooDer";
     QString postData = "";
 
-    if (p_name.isEmpty() && p_label.isEmpty()) {
-        postData = QString("s=feed/%1&ac=subscribe&T=%2").arg(p_address, googleToken);
-    } else if (!p_name.isEmpty() && p_label.isEmpty()) {
-        postData = QString("s=feed/%1&ac=subscribe&t=%2&T=%3").arg(p_address, p_name, googleToken);
-    } else if (!p_name.isEmpty() && !p_label.isEmpty()) {
-        postData = QString("s=feed/%1&ac=subscribe&t=%2&a=user/-/label/%3&T=%4").arg(p_address, p_name, p_label, googleToken);
-    } else if (p_name.isEmpty() && !p_label.isEmpty()) {
-        postData = QString("s=feed/%1&ac=subscribe&a=user/-/label/%2&T=%3").arg(p_address, p_label, googleToken);
+    if (name.isEmpty() && label.isEmpty()) {
+        postData = QString("s=feed/%1&ac=subscribe&T=%2").arg(address, _googleToken);
+    } else if (!name.isEmpty() && label.isEmpty()) {
+        postData = QString("s=feed/%1&ac=subscribe&t=%2&T=%3").arg(address, name, _googleToken);
+    } else if (!name.isEmpty() && !label.isEmpty()) {
+        postData = QString("s=feed/%1&ac=subscribe&t=%2&a=user/-/label/%3&T=%4").arg(address, name, label, _googleToken);
+    } else if (name.isEmpty() && !label.isEmpty()) {
+        postData = QString("s=feed/%1&ac=subscribe&a=user/-/label/%2&T=%3").arg(address, label, _googleToken);
     }
 
     QNetworkAccessManager* feedConnection = new QNetworkAccessManager(this);
 
     QNetworkRequest postRequest = QNetworkRequest(QUrl(url));
-    postRequest.setRawHeader("Authorization", googleCookie->value());
+    postRequest.setRawHeader("Authorization", _googleCookie->value());
     postRequest.setRawHeader("Content-Type", "application/x-www-form-urlencoded");
 
     connect(feedConnection, SIGNAL(finished(QNetworkReply*)),
@@ -550,14 +550,14 @@ void GoogleReader::addFeed(QString p_address, QString p_name, QString p_label) {
 /*!
 \brief Parses responde for subscribing new feed
 */
-void GoogleReader::parseAddFeed(QNetworkReply* p_reply) {
+void GoogleReader::parseAddFeed(QNetworkReply* reply) {
     qDebug() << "GoogleReader::parseAddFeed()";
 
-    p_reply->deleteLater();
+    reply->deleteLater();
 
-    if (p_reply->readAll() != "OK") {
+    if (reply->readAll() != "OK") {
         qDebug() << "Error during add feed";
-        qDebug() << p_reply->readAll();
+        qDebug() << reply->readAll();
         emit signalStatusAddFeed(false);
         return;
     }
@@ -568,19 +568,19 @@ void GoogleReader::parseAddFeed(QNetworkReply* p_reply) {
 /*!
 \brief Remove feed from subscribe list
 */
-void GoogleReader::removeFeed(QString p_id) {
-    qDebug() << "GoogleReader::removeFeed(" << p_id << ")";
+void GoogleReader::removeFeed(QString id) {
+    qDebug() << "GoogleReader::removeFeed(" << id << ")";
 
-    if (googleCookie == NULL) {
+    if (_googleCookie == NULL) {
         emit signalConnected(false);
         this->login();
     }
 
     QString url = "http://www.google.com/reader/api/0/subscription/edit?client=GooDer";
-    QString postData = QString("s=feed/%1&ac=unsubscribe&T=%2").arg(p_id, googleToken);
+    QString postData = QString("s=feed/%1&ac=unsubscribe&T=%2").arg(id, _googleToken);
 
     QNetworkRequest postRequest = QNetworkRequest(QUrl(url));
-    postRequest.setRawHeader("Authorization", googleCookie->value());
+    postRequest.setRawHeader("Authorization", _googleCookie->value());
     postRequest.setRawHeader("Content-Type", "application/x-www-form-urlencoded");
 
     QNetworkAccessManager * managerRemoveFeed = new QNetworkAccessManager(this);
@@ -594,13 +594,13 @@ void GoogleReader::removeFeed(QString p_id) {
 /*!
 \brief Parses responde for removing feed from subscribe list
 */
-void GoogleReader::parseRemoveFeed(QNetworkReply* p_reply) {
+void GoogleReader::parseRemoveFeed(QNetworkReply* reply) {
     qDebug() << "GoogleReader::parseRemoveFeed()";
 
-    p_reply->deleteLater();
+    reply->deleteLater();
 
-    if (p_reply->readAll() != "OK") {
-        qDebug() << p_reply->readAll();
+    if (reply->readAll() != "OK") {
+        qDebug() << reply->readAll();
         emit signalStatusRemoveFeed(false);
         return;
     }

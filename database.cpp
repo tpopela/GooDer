@@ -11,13 +11,13 @@ Database::Database(QObject *parent) :
 /*!
 \brief
 */
-int Database::getUnreadCountInLabel(QString p_label) {
+int Database::getUnreadCountInLabel(QString label) {
     bool flagLabel = false;
     int sum = 0;
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         QList<QString> labelList = feed->getLabel();
-        foreach (QString label, labelList) {
-           if (label == p_label) {
+        foreach (QString feedLabel, labelList) {
+           if (feedLabel == label) {
                flagLabel = true;
                sum += feed->getUnreadCount();
            }
@@ -28,21 +28,21 @@ int Database::getUnreadCountInLabel(QString p_label) {
 }
 
 void Database::removeFeed(QString feedId) {
-    for (int i = 0; i < storage.count(); i++) {
-        if (storage.at(i)->getId() == feedId) {
-            storage.removeAt(i);
+    for (int i = 0; i < _storage.count(); i++) {
+        if (_storage.at(i)->getId() == feedId) {
+            _storage.removeAt(i);
         }
     }
 }
 
 void Database::markFeedAsRead(QString feedId) {
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         if (feed->getId() == feedId) {
             foreach (Entry* entry, feed->getEntriesList()) {
                 if (!entry->isRead()) {
                     entry->setAsRead();
                     feed->decrementUnreadCount();
-                    numberOfNewEntries--;
+                    _numberOfNewEntries--;
                 }
             }
             break;
@@ -51,12 +51,12 @@ void Database::markFeedAsRead(QString feedId) {
 }
 
 void Database::markEntryAsRead(QString entryId) {
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         foreach (Entry* entry, feed->getEntriesList()) {
             if (entry->getId()  == entryId) {
                     entry->setAsRead();
                     feed->decrementUnreadCount();
-                    numberOfNewEntries--;
+                    _numberOfNewEntries--;
                     break;
             }
         }
@@ -64,7 +64,7 @@ void Database::markEntryAsRead(QString entryId) {
 }
 
 void Database::addFeedLabel(QString feedId, QString labelName) {
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         if (feed->getId() == feedId) {
             feed->setLabel(labelName);
             break;
@@ -73,7 +73,7 @@ void Database::addFeedLabel(QString feedId, QString labelName) {
 }
 
 void Database::removeFeedLabel(QString feedId, QString labelName) {
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         if (feed->getId() == feedId) {
             feed->removeLabel(labelName);
             break;
@@ -85,7 +85,7 @@ void Database::removeFeedLabel(QString feedId, QString labelName) {
 \brief
 */
 int Database::getUnreadCountInFeed(QString feedId) {
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         if (feed->getId() == feedId) {
             return feed->getUnreadCount();
         }
@@ -100,7 +100,7 @@ QList<QString> Database::getFeedsInLabel(QString label) {
 
     QList<QString> feedsList;
 
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         QList<QString> tempLabelList = feed->getLabel();
         foreach (QString tempLabel, tempLabelList) {
             if (label == tempLabel) {
@@ -115,7 +115,7 @@ QList<QString> Database::getFeedsInLabel(QString label) {
 \brief
 */
 void Database::setNumberOfNewEntries(QString feedId, int numberOfNewEntries) {
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         if (feed->getTitle() == feedId) {
             feed->setUnreadCount(numberOfNewEntries);
             break;
@@ -127,7 +127,7 @@ QList<QString> Database::getLabelsList() {
 
     QList<QString> labelList;
 
-    foreach (Feed* feed, storage) {
+    foreach (Feed* feed, _storage) {
         QList<QString> templabelList = feed->getLabel();
         foreach (QString label, templabelList) {
             if (label != "" && !labelList.contains(label)) {
@@ -138,19 +138,19 @@ QList<QString> Database::getLabelsList() {
     return labelList;
 }
 
-QString Database::getIdForFeed(QString p_name) {
-    foreach (Feed* feed, storage) {
-        if (p_name == feed->getTitle()) {
+QString Database::getIdForFeed(QString name) {
+    foreach (Feed* feed, _storage) {
+        if (name == feed->getTitle()) {
             return feed->getId();
         }
     }
     return NULL;
 }
 
-QString Database::getEntryLink(QString p_id) {
-    foreach (Feed* feed, storage) {
+QString Database::getEntryLink(QString id) {
+    foreach (Feed* feed, _storage) {
         foreach (Entry* entry, feed->getEntriesList()) {
-            if (entry->getId() == p_id) {
+            if (entry->getId() == id) {
                 return entry->getLink();
             }
         }
@@ -158,10 +158,10 @@ QString Database::getEntryLink(QString p_id) {
     return NULL;
 }
 
-Entry* Database::getEntry(QString p_id) {
-    foreach (Feed* feed, storage) {
+Entry* Database::getEntry(QString id) {
+    foreach (Feed* feed, _storage) {
         foreach (Entry* entry, feed->getEntriesList()) {
-            if (entry->getId() == p_id) {
+            if (entry->getId() == id) {
                 return entry;
             }
         }
@@ -169,10 +169,10 @@ Entry* Database::getEntry(QString p_id) {
     return NULL;
 }
 
-QString Database::getFeedIdForEntry(QString p_id) {
-    foreach (Feed* feed, storage) {
+QString Database::getFeedIdForEntry(QString id) {
+    foreach (Feed* feed, _storage) {
         foreach (Entry* entry, feed->getEntriesList()) {
-            if (entry->getId() == p_id) {
+            if (entry->getId() == id) {
                 return feed->getId();
             }
         }
@@ -223,7 +223,7 @@ void Database::addFeeds(QByteArray source) {
                         //pokud mam vsechny potrebne informace o zdroji
                         if (!id.isEmpty() && !title.isEmpty() && !firstitemmsec.isEmpty()) {
                             //prochazim seznamem zdroju
-                            foreach (Feed* feed, storage)
+                            foreach (Feed* feed, _storage)
                             {
                                 //pokud jsem stejny zdroj nasel
                                 if (feed->getId() == id) {
@@ -237,7 +237,7 @@ void Database::addFeeds(QByteArray source) {
                                 title.clear();
                                 label.clear();
                                 //a vlozim do seznamu
-                                storage.append(newFeed);
+                                _storage.append(newFeed);
                             }
                         }
                         feedExists = false;
@@ -262,7 +262,7 @@ void Database::addUnreadFeeds(QByteArray source) {
     bool inList = false;
     bool notInUser = false;
 
-    numberOfNewEntries = 0;
+    _numberOfNewEntries = 0;
 
     //dokud nejsem na konci
     while (!sourceReader.atEnd()) {
@@ -298,13 +298,13 @@ void Database::addUnreadFeeds(QByteArray source) {
                             //pokud mam vsechny potrebne informace o zdroji
                             if (!id.isEmpty() && !newestItemTimestampUsec.isEmpty()) {
                                 //prochazim seznamem zdroju
-                                foreach (Feed* feed, storage) {
+                                foreach (Feed* feed, _storage) {
                                     //pokud jsem stejny zdroj nasel
                                     if (feed->getId() == id) {
                                         //nastavim novy pocet neprectenych polozek
                                         feed->setUnreadCount(unreadCount);
                                         feed->setNewestItemTimestamp(newestItemTimestampUsec.toInt());
-                                        numberOfNewEntries += unreadCount;
+                                        _numberOfNewEntries += unreadCount;
                                     }
                                 }
                             }
@@ -358,7 +358,7 @@ void Database::addEntries(QByteArray source) {
                     //ulozim nazev zdroje
                     feedTitle = sourceReader.text().toString();
                     //prochazim seznam zdroju, zda je tento zdroj jiz vlozen
-                    foreach (Feed* feed, storage) {
+                    foreach (Feed* feed, _storage) {
                         //pokud ano
                         if (feed->getId() == feedId) {
                             if (feed->getLabel().isEmpty()) feed->setLabel(label);
@@ -371,10 +371,10 @@ void Database::addEntries(QByteArray source) {
                         Feed *newFeed = new Feed(feedId, feedTitle);
                         newFeed->setLabel(label);
                         //a vlozim do seznamu
-                        storage.append(newFeed);
+                        _storage.append(newFeed);
                     }
                     //prochazim seznam zdroju
-                    foreach (Feed* feed, storage) {
+                    foreach (Feed* feed, _storage) {
                         //a hledam zdroj do ktereho patri dana polozka
                         if (feed->getId() == feedId) {
                             foreach (Entry* entry, feed->getEntriesList()) {

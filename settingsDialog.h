@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QSettings>
 #include "ui_settingsDialog.h"
+#include "simplecrypt.h"
 
 class SettingsDialog : public QDialog
 {
@@ -22,10 +23,10 @@ class SettingsDialog : public QDialog
         void settingsData();
         void signalNoUserInfo();
 
-
     private:
         Ui::settingsDialog ui;
-        QSettings* settings;
+        QSettings* _settings;
+        SimpleCrypt* _crypt;
 };
 
 #endif // SETTINGSDIALOG_H

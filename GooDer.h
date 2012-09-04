@@ -1,9 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-//#include "googleAccount.h"
-//#include "googleReader.h"
 #include "googlereadercontroller.h"
+#include "simplecrypt.h"
 
 #include <QMainWindow>
 #include <QMessageBox>
@@ -79,7 +78,6 @@ class GooDer : public QMainWindow {
         void showSettingsDialog();
         void showSettingsDialogSuccess();
         void login();
-//        void relogin();
         void showCreateNewLabelDialog();
         void createNewLabel(QString);
         void showCommandLine();
@@ -93,7 +91,7 @@ class GooDer : public QMainWindow {
         void readNextLabel();
         void readPreviousLabel();
         void noUserInfo();
-        void getEntriesFromFeed(bool);
+        void getEntriesFromFeed(bool moveToNextEntry);
         void showHideToolbar();
         void hideSearchCommandBar();
         void showHideFeedList();
@@ -114,9 +112,7 @@ class GooDer : public QMainWindow {
         void s_refreshAfterFeedDeleted();
 
         void statusLogin(bool);
-//        void statusGetFeeds(bool);
         void statusGetEntries(bool);
-//        void statusGetUnreadFeeds(bool);
         void statusMarkFeedAsRead(bool);
         void statusMarkEntryAsRead(bool);
         void statusAddFeedLabel(bool);
@@ -124,61 +120,61 @@ class GooDer : public QMainWindow {
         void statusAddFeed(bool);
         void statusRemoveFeed(bool);
 
-
     private:
         Ui::MainWindow *ui;
 
-//        GoogleReader* googleReader;
-        GoogleReaderController* googleReaderController;
-        AddFeedDialog* addFeedDialogInstance;
-        RemoveFeedDialog* removeFeedDialogInstance;
-        SettingsDialog* settingsDialogInstance;
-        LabelNameDialog* labelNameDialogInstance;
-        QSettings* settings;
+        GoogleReaderController* _googleReaderController;
+        AddFeedDialog* _addFeedDialogInstance;
+        RemoveFeedDialog* _removeFeedDialogInstance;
+        SettingsDialog* _settingsDialogInstance;
+        LabelNameDialog* _labelNameDialogInstance;
+        QSettings* _settings;
+        SimpleCrypt* _crypt;
 
-        QSystemTrayIcon* trayIcon;
-        QTimer* timerRefreshFeeds;
-        QMenu* trayMenu;
-        QMenu* feedContextMenu;
-        QMenu* entryContextMenu;
-        QAction* actionCreateNewLabel;
-        QAction* actionRemoveLabel;
-        QAction* actionRemoveFeed;
-        QAction* actionOpenInExternBrowser;
-        QStringList commandHistory;
-        QList<QString> shortcuts;
+        QSystemTrayIcon* _trayIcon;
+        QTimer* _timerRefreshFeeds;
+        QMenu* _trayMenu;
+        QMenu* _feedContextMenu;
+        QMenu* _entryContextMenu;
+        QAction* _actionCreateNewLabel;
+        QAction* _actionRemoveLabel;
+        QAction* _actionRemoveFeed;
+        QAction* _actionOpenInExternBrowser;
+        QStringList _commandHistory;
+        QList<QString> _shortcuts;
 
-        QLineEdit* commandsLine;
-        QLineEdit* loadProgress;
-        QLineEdit* programStatus;
+        QLineEdit* _commandsLine;
+        QLineEdit* _loadProgress;
 
-        QString shortcutNextEntry;
-        QString shortcutPrevEntry;
-        QString shortcutNextFeed;
-        QString shortcutPrevFeed;
-        QString shortcutNextLabel;
-        QString shortcutPrevLabel;
-        QString shortcutToggleFeedPanel;
+        QString _shortcutNextEntry;
+        QString _shortcutPrevEntry;
+        QString _shortcutNextFeed;
+        QString _shortcutPrevFeed;
+        QString _shortcutNextLabel;
+        QString _shortcutPrevLabel;
+        QString _shortcutToggleFeedPanel;
 
-        QFont fontBold;
-        QFont fontNormal;
-        QColor labelColor;
-        QColor lineColor;
+        QFont _fontBold;
+        QFont _fontNormal;
+        QColor _labelColor;
+        QColor _lineColor;
 
-        int colorCounter;
-        int commandHistoryCounter;
-        int checkFeedTime;
-        int currentFeed;
-        int currentLabel;
-        int lastEntriesCount;
-        int lastNotificationCount;
-        bool online;
-        bool autoHideFeedPanel;
-        bool flashEnabled;
-        bool showSummary;
-        bool feedAdded;
-        bool firstRun;
-        bool showAllFeeds;
+        int _commandHistoryCounter;
+        int _checkFeedTime;
+        int _currentFeed;
+        int _currentLabel;
+        int _lastEntriesCount;
+
+        bool _online;
+        bool _autoHideFeedPanel;
+        bool _flashEnabled;
+        bool _showSummary;
+        bool _feedAdded;
+        bool _firstRun;
+        bool _showAllFeeds;
+        bool _fetchingEntriesFromHistory;
+        // true if activated from keyboard shortcut, false if with click
+        bool _fetchingEntriesFromHistoryActivated;
 
         void connectSignals();
         void connectSignalsUI();
@@ -208,8 +204,6 @@ class GooDer : public QMainWindow {
         void markUIFeedAsUnread(int, int, int);
         void setEntriesWidget();
         void refreshFeedWidget();
-        QString passwordSalter(QString);
-        QString passwordDeSalter(QString);
 };
 
 #endif // MAINWINDOW_H

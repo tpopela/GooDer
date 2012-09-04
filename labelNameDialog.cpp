@@ -4,14 +4,14 @@
 /*!
 \brief Implicitni konstruktor
 */
-LabelNameDialog::LabelNameDialog(QList<QString> p_labelList, QWidget* parent) : QDialog(parent) {
+LabelNameDialog::LabelNameDialog(QList<QString> labelList, QWidget* parent) : QDialog(parent) {
 
     ui.setupUi(this);
 
     ui.labelName->hide();
     ui.labelLabelName->hide();
 
-    ui.labelComboBox->addItems(p_labelList);
+    ui.labelComboBox->addItems(labelList);
 
     connect(ui.labelComboBox, SIGNAL(activated(int)),
             this, SLOT(showNewLabel(int)));
@@ -56,8 +56,8 @@ void LabelNameDialog::done(int ready) {
 /*!
 \brief Pokud je zvolena moznost pridat novy stitek zobrazi pole pro jeho zadani
 */
-void LabelNameDialog::showNewLabel(int p_index) {
-    if (p_index == 1) {
+void LabelNameDialog::showNewLabel(int index) {
+    if (index == 1) {
         ui.labelLabelName->show();
         ui.labelName->show();
     }

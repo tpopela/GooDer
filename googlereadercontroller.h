@@ -36,11 +36,12 @@ public:
     int getTotalUnreadCount();
 
 private:
-    Database* database;
-    GoogleReader* googleReader;
-    bool firstRun;
-    bool alreadyFetchingNoEntries;
-    int cnt;
+    Database* _database;
+    GoogleReader* _googleReader;
+    bool _firstRun;
+    bool _alreadyFetchingNoEntries;
+    bool _fetchingEntriesFromHistory;
+    int _feedsWithNoEntriesCount;
 
 signals:
     void signalConnected(bool);
@@ -56,8 +57,6 @@ signals:
     void signalStatusRemoveFeedLabel(bool);
     void signalStatusAddFeed(bool);
     void signalStatusRemoveFeed(bool);
-
-public slots:
 
 private slots:
     void rawGetFeeds(QByteArray);
