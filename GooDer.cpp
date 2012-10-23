@@ -213,6 +213,7 @@ void GooDer::loadSettings() {
         emit signalLogin();
     }
     else {
+        showHelp();
         emit this->showSettingsDialog();
     }
 }
@@ -861,7 +862,7 @@ void GooDer::showAbout() {
 \brief Zobrazi dialog O aplikaci
 */
 void GooDer::showHelp() {
-    ui->browser->load(QUrl(":/help/help.html"));
+    ui->browser->load(QUrl("qrc:/help/help.html"));
 }
 
 void GooDer::connectSignalsUI() {
