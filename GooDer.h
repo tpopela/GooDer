@@ -171,6 +171,7 @@ class GooDer : public QMainWindow {
         bool _feedAdded;
         bool _firstRun;
         bool _showAllFeeds;
+        bool _showLabels;
         bool _fetchingEntriesFromHistory;
         // true if activated from keyboard shortcut, false if with click
         bool _fetchingEntriesFromHistoryActivated;
@@ -204,6 +205,7 @@ class GooDer : public QMainWindow {
         void setEntriesWidget();
         void refreshFeedWidget();
         void addFeedEntriesToEntriesList(Feed*);
+        void toggleLabelsVisibility(bool);
 };
 
 #endif // MAINWINDOW_H

@@ -174,8 +174,6 @@ void GooDer::setStatusbarWidgets() {
 
 void GooDer::setFlash(bool flash) {
 
-//    flashEnabled = flash;
-
     QWebSettings *defaultSettings = QWebSettings::globalSettings();
     defaultSettings->setAttribute(QWebSettings::JavascriptEnabled, true);
     if (flash) {
@@ -203,6 +201,7 @@ void GooDer::loadSettings() {
         _checkFeedTime = _settings->value("checkFeedTime", 300000).toInt();
         _autoHideFeedPanel = _settings->value("autoHideFeedPanel", true).toBool();
         _showAllFeeds = _settings->value("showAllFeeds", true).toBool();
+        _showLabels = _settings->value("showLabels", true).toBool();
 
         (_settings->value("toolbar", true).toBool()) ? ui->toolBar->show() : ui->toolBar->hide();
         (_settings->value("menuVisibility", true).toBool()) ? ui->menubar->show() : ui->menubar->hide();
@@ -229,6 +228,7 @@ void GooDer::saveSettings() {
     _settings->setValue("flash", _flashEnabled);
     _settings->setValue("showSummary", _showSummary);
     _settings->setValue("showAllFeeds", _showAllFeeds);
+    _settings->setValue("showLabels", _showLabels);
     _settings->setValue("shortcutNextEntry", _shortcutNextEntry);
     _settings->setValue("shortcutPrevEntry", _shortcutPrevEntry);
     _settings->setValue("shortcutNextFeed", _shortcutNextFeed);
@@ -249,7 +249,6 @@ void GooDer::loginSuccessfull(bool status) {
     else {
         qDebug() << "Login was unsuccessfull";
     }
-
 }
 
 /*!
@@ -482,7 +481,7 @@ void GooDer::parseCommands() {
                 this->setStatusBarMessage("Flash is disabled");
             }
         }
-        else if (command.mid(4,7) == "showall") {
+        else if (command.mid(4,8) == "show all") {
             if (command.right(2) == "on") {
                 _showAllFeeds = true;
                 ui->feedTreeWidget->topLevelItem(0)->setHidden(false);
@@ -491,6 +490,15 @@ void GooDer::parseCommands() {
                 _showAllFeeds = false;
                 ui->feedTreeWidget->topLevelItem(0)->setHidden(true);
             }
+        }
+        else if (command.mid(4,11) == "show labels") {
+            if (command.right(2) == "on") {
+                _showLabels = true;
+            }
+            else {
+                _showLabels = false;
+            }
+            toggleLabelsVisibility(_showLabels);
         }
         //pokud chceme nastavit automaticke skryvani panelu se zdroji
         else if (command.mid(4,8) == "autohide") {
@@ -632,6 +640,12 @@ void GooDer::s_refreshFeedWidget() {
     refreshFeedWidget();
 }
 
+void GooDer::toggleLabelsVisibility(bool visibility) {
+    for (int i = 0; i < ui->feedTreeWidget->topLevelItemCount(); i++)
+        if (ui->feedTreeWidget->topLevelItem(i)->text(2) == "label")
+            ui->feedTreeWidget->topLevelItem(i)->setHidden(!visibility);
+}
+
 void GooDer::refreshFeedWidget() {
 
     ui->feedTreeWidget->clear();
@@ -682,6 +696,8 @@ void GooDer::refreshFeedWidget() {
         }
         _feedAdded = false;
     }
+
+    toggleLabelsVisibility(_showLabels);
 
     differentiateFeedsLines();
     checkEntriesFeedsNumbers();
