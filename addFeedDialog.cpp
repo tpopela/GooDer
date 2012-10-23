@@ -25,7 +25,7 @@ void AddFeedDialog::done(int ready) {
     if (QDialog::Accepted == ready) {
         //zkontroluji povinne udaje
         if (ui.feedAddress->text() == "") {
-            QMessageBox::information(0, trUtf8("Chyba"), trUtf8("Zadejte adresu zdroje!"));
+            QMessageBox::information(0, trUtf8("Error"), trUtf8("Please fill feed address!"));
             return;
         }
         else {

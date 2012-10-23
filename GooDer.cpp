@@ -581,7 +581,7 @@ void GooDer::parseCommands() {
 
 void GooDer::newFeedAdded() {
     _feedAdded = true;
-    this->callCheckFeeds();
+    callCheckFeeds();
 }
 
 /*!
@@ -1046,8 +1046,8 @@ void GooDer::markAllAsRead() {
     markAllUIFeedsListAsRead();
     //v seznamu vsech polozek oznacim polozky jako prectene
     markAllUIEntriesListAsRead();
+    //zkontroluji pocet novych polozek
     checkEntriesFeedsNumbers();
-    setIcon();
 }
 
 /*!
@@ -1058,6 +1058,7 @@ void GooDer::markLabelAsRead() {
     _googleReaderController->markLabelAsRead(ui->feedTreeWidget->currentItem()->text(0));
     //v seznamu vsech polozek oznacim polozky jako prectene
     markAllUIEntriesListAsRead();
+    //zkontroluji pocet novych polozek
     checkEntriesFeedsNumbers();
 }
 
@@ -1078,26 +1079,21 @@ void GooDer::markFeedAsRead() {
 void GooDer::markAsRead() {
 
     //prochazim panel s polozkami
-    if (ui->entriesTreeWidget->topLevelItemCount() > 0) {
-        if (ui->feedTreeWidget->currentIndex().row() != -1) {
-            //pokud je zvolena polozka Vsechny zdroje
-            if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(0)->text(0)) {
-                markAllAsRead();
-            }
-            //po kliknuti na stitek
-            if (_googleReaderController->getUnreadCountInLabel(ui->feedTreeWidget->currentItem()->text(0)) != -1)
-                markLabelAsRead();
-            else
-                markFeedAsRead();
-        }
-        else {
-            markAllAsRead();
-        }
+    if (ui->entriesTreeWidget->topLevelItemCount() <= 0)
+        return;
 
-        if (_googleReaderController->getTotalUnreadCount() == 0)
-            setIcon();
-        //        showStatusBarMessage("Položky úspěšně označeny jako přečtené");
-    }
+    if (ui->feedTreeWidget->currentIndex().row() == -1)
+        markAllAsRead();
+
+    if (ui->feedTreeWidget->currentItem()->text(2) == "allfeeds")
+        markAllAsRead();
+    else if (ui->feedTreeWidget->currentItem()->text(2) == "label")
+        markLabelAsRead();
+    else
+        markFeedAsRead();
+
+    if (_googleReaderController->getTotalUnreadCount() == 0)
+        setIcon();
 }
 
 /*!
@@ -1105,12 +1101,14 @@ void GooDer::markAsRead() {
 */
 void GooDer::checkEntriesFeedsNumbers() {
 
-    int sumUnreadEntriesLabel = 0;
 
     //prochazim seznam polozek a zdroju
     for (int i = 0; i < ui->feedTreeWidget->topLevelItemCount(); i++) {
         for (int j  = 0; j < ui->feedTreeWidget->topLevelItem(i)->childCount(); j++) {
-            int unreadCount = _googleReaderController->getUnreadCountInFeed(ui->feedTreeWidget->topLevelItem(i)->child(j)->text(2));
+
+            QString feedId = ui->feedTreeWidget->topLevelItem(i)->child(j)->text(2);
+            int unreadCount = _googleReaderController->getUnreadCountInFeed(feedId);
+
             if (unreadCount > 0) {
                 //oznacim zdroj jako neprecteny
                 markUIFeedAsUnread(i,j,unreadCount);
@@ -1121,7 +1119,7 @@ void GooDer::checkEntriesFeedsNumbers() {
         }
     }
 
-    sumUnreadEntriesLabel = 0;
+    int sumUnreadEntriesLabel = 0;
 
     //labels
     for (int k = 0; k < ui->feedTreeWidget->topLevelItemCount(); k++) {
@@ -1146,6 +1144,7 @@ void GooDer::checkEntriesFeedsNumbers() {
     //nastavi pocet vsech neprectenych polozek
     int numberOfNewEntries = _googleReaderController->getTotalUnreadCount();
     ui->feedTreeWidget->topLevelItem(0)->setText(1, QString::number(numberOfNewEntries));
+
     if (numberOfNewEntries > 0) {
         ui->feedTreeWidget->topLevelItem(0)->setFont(0,_fontBold);
         ui->feedTreeWidget->topLevelItem(0)->setFont(1,_fontBold);
@@ -1179,34 +1178,29 @@ void GooDer::showCreateNewLabelDialog() {
 */
 void GooDer::createNewLabel(QString labelName) {
 
-    QString id = "";
-    bool notLabel = true;
+    QString feedId = ui->feedTreeWidget->currentItem()->text(2);
 
-    id = _googleReaderController->getIdForFeed(ui->feedTreeWidget->currentItem()->text(0));
-
-    for (int j = 0; j < ui->feedTreeWidget->topLevelItemCount(); j++) {
-        if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(j)->text(0))
-            notLabel = false;
+    if (feedId == "allfeeds" || feedId == "label") {
+        showStatusBarMessage("Can't create label on label!");
+        return;
     }
 
-    if (notLabel)
-        _googleReaderController->addFeedLabel(id, labelName);
-    else
-        showStatusBarMessage("Can't create label on label!");
+    _googleReaderController->addFeedLabel(feedId, labelName);
 }
 
 /*!
 \brief Odstrani stitek z aktualne zvoleneho zdroje
 */
 void GooDer::removeLabel() {
-    if (ui->feedTreeWidget->currentItem()->parent()->text(0) != ui->feedTreeWidget->topLevelItem(0)->text(0)) {
-        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
-            if (ui->feedTreeWidget->currentItem()->text(0) == feed->getTitle()) {
-                _googleReaderController->removeFeedLabel(feed->getId(), ui->feedTreeWidget->currentItem()->parent()->text(0));
-                break;
-            }
-        }
-    }
+
+    QTreeWidgetItem* currentItem = ui->feedTreeWidget->currentItem();
+    QString feedId = currentItem->text(2);
+    QString label = currentItem->parent()->text(0);
+
+    if (currentItem->parent()->text(2) == "allfeeds")
+        return;
+
+    _googleReaderController->removeFeedLabel(feedId, label);
 }
 
 /*!
@@ -1214,54 +1208,41 @@ void GooDer::removeLabel() {
 */
 void GooDer::getEntriesFromFeed(bool moveToNextEntry) {
     _fetchingEntriesFromHistory = false;
-    if (ui->feedTreeWidget->currentIndex().row() != -1) {
-        //pokud nejsem na polozce Vsechny zdroje
-        if (ui->feedTreeWidget->currentItem()->text(0) != ui->feedTreeWidget->topLevelItem(0)->text(0)){
 
-            //predchozi obsah vymazu (pokud bych toto neudelal, nove polozky by se pridavali za aktualni
-            ui->entriesTreeWidget->clear();
+    if (ui->feedTreeWidget->currentIndex().row() == -1)
+        return;
 
-            //do panelu s polozkami vypisu vsechny polozky ze zdroje i s nove ziskanymi
-            foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
-                if (feed->getTitle() == ui->feedTreeWidget->currentItem()->text(0)) {
-                    foreach (Entry* entry, feed->getEntriesList()) {
+    if (ui->feedTreeWidget->currentItem()->text(2) == "allfeeds")
+        return;
 
-                        QTreeWidgetItem *newItem = new QTreeWidgetItem;
-                        newItem->setText(0, entry->getTitle());
-                        newItem->setText(1, feed->getTitle());
-                        newItem->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-                        newItem->setText(3, entry->getAuthor());
-                        newItem->setText(4, entry->getId());
-                        if (!entry->isRead()) {
-                            newItem->setFont(0, _fontBold);
-                            newItem->setFont(1, _fontBold);
-                            newItem->setFont(2, _fontBold);
-                            newItem->setFont(3, _fontBold);
-                        }
-                        ui->entriesTreeWidget->addTopLevelItem(newItem);
-                    }
-                }
-            }
-            differentiateEntriesLines();
-            //pokud mam prejit na nasledujici polozku
-            if (moveToNextEntry) {
-                if (_lastEntriesCount != ui->entriesTreeWidget->topLevelItemCount()) {
-                    ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(ui->entriesTreeWidget->topLevelItemCount()-5));
-                    emit signalReadNextEntry(ui->entriesTreeWidget->currentIndex());
-                }
-                else {
-                    ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(ui->entriesTreeWidget->topLevelItemCount()-1));
-                }
-            }
-            //pokud mam zustat na aktualni polozce
-            else {
-                if (_lastEntriesCount != ui->entriesTreeWidget->topLevelItemCount()) {
-                    ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(ui->entriesTreeWidget->topLevelItemCount()-6));
-                }
-                else {
-                    ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(ui->entriesTreeWidget->topLevelItemCount()-1));
-                }
-            }
+    //predchozi obsah vymazu (pokud bych toto neudelal, nove polozky by se pridavali za aktualni
+    ui->entriesTreeWidget->clear();
+
+    //do panelu s polozkami vypisu vsechny polozky ze zdroje i s nove ziskanymi
+    foreach (Feed* feed, _googleReaderController->getFeedsDB())
+        addFeedEntriesToEntriesList(feed);
+
+    differentiateEntriesLines();
+
+    int currentIndex = ui->entriesTreeWidget->topLevelItemCount();
+
+    //pokud mam prejit na nasledujici polozku
+    if (moveToNextEntry) {
+        if (_lastEntriesCount != ui->entriesTreeWidget->topLevelItemCount()) {
+            ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(currentIndex - 5));
+            emit signalReadNextEntry(ui->entriesTreeWidget->currentIndex());
+        }
+        else {
+            ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(currentIndex - 1));
+        }
+    }
+    //pokud mam zustat na aktualni polozce
+    else {
+        if (_lastEntriesCount != ui->entriesTreeWidget->topLevelItemCount()) {
+            ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(currentIndex - 6));
+        }
+        else {
+            ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(currentIndex - 1));
         }
     }
 }
@@ -1428,13 +1409,11 @@ void GooDer::showStatusBarMessage(QString message) {
     message.insert(0, time_now);
     ui->statusbar->showMessage(trUtf8(message.toAscii()), 4000);
 }
-// ?????????
+
 void GooDer::noUserInfo() {
     setShortcuts();
-//    if (googleReaderController->getPassword().isEmpty()) {
-        showStatusBarMessage(trUtf8("Please enter login credentials!"));
-        _settingsDialogInstance->show();
-//    }
+    showStatusBarMessage(trUtf8("Please enter login credentials!"));
+    _settingsDialogInstance->show();
 }
 
 /*!

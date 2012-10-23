@@ -26,7 +26,7 @@ void LabelNameDialog::done(int ready) {
     if (ready == QDialog::Accepted) {
         //zkontroluji povinne udaje
         if (ui.labelName->text().isEmpty() && ui.labelComboBox->currentIndex() == 1) {
-            QMessageBox::information(0, trUtf8("Chyba"), trUtf8("Vyplňte název štítku!"));
+            QMessageBox::information(0, trUtf8("Error"), trUtf8("Please fill up label name!"));
             return;
         }
         else {

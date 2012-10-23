@@ -127,7 +127,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Seznam zdrojů</string>
+        <string>Feeds</string>
        </property>
        <property name="flat">
         <bool>true</bool>
@@ -230,7 +230,7 @@
          <item>
           <widget class="QLabel" name="labelSearch">
            <property name="text">
-            <string>Hledat:</string>
+            <string>Search:</string>
            </property>
           </widget>
          </item>
@@ -266,37 +266,37 @@
      <height>19</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuNastaveni">
+   <widget class="QMenu" name="menuSettings">
     <property name="title">
-     <string>Nastavení</string>
+     <string>Settings</string>
     </property>
     <addaction name="actionSettings"/>
    </widget>
-   <widget class="QMenu" name="menuZdroje">
+   <widget class="QMenu" name="menuFeeds">
     <property name="title">
-     <string>Zdroje</string>
+     <string>Feeds</string>
     </property>
     <addaction name="actionCheckFeeds"/>
     <addaction name="actionAddFeed"/>
     <addaction name="actionRemoveFeed"/>
    </widget>
-   <widget class="QMenu" name="menuSoubor">
+   <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>Soubor</string>
+     <string>File</string>
     </property>
     <addaction name="actionQuit"/>
    </widget>
-   <widget class="QMenu" name="menuNapoveda">
+   <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Nápověda</string>
+     <string>Help</string>
     </property>
     <addaction name="actionAbout"/>
     <addaction name="actionHelp"/>
    </widget>
-   <addaction name="menuSoubor"/>
-   <addaction name="menuZdroje"/>
-   <addaction name="menuNastaveni"/>
-   <addaction name="menuNapoveda"/>
+   <addaction name="menuFile"/>
+   <addaction name="menuFeeds"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -319,7 +319,7 @@
   </widget>
   <action name="actionQuit">
    <property name="text">
-    <string>Ukončit</string>
+    <string>Quit</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
@@ -334,7 +334,7 @@
      <normaloff>:/icons/icons/checkFeed.png</normaloff>:/icons/icons/checkFeed.png</iconset>
    </property>
    <property name="text">
-    <string>Aktualizovat zdroje</string>
+    <string>Check Feeds</string>
    </property>
    <property name="shortcut">
     <string>F5</string>
@@ -346,7 +346,7 @@
      <normaloff>:/icons/icons/addFeed.png</normaloff>:/icons/icons/addFeed.png</iconset>
    </property>
    <property name="text">
-    <string>Přidat zdroj</string>
+    <string>Add new feed</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
@@ -358,7 +358,7 @@
      <normaloff>:/icons/icons/removeFeed.png</normaloff>:/icons/icons/removeFeed.png</iconset>
    </property>
    <property name="text">
-    <string>Odebrat zdroj</string>
+    <string>Remove feed</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
@@ -366,7 +366,7 @@
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>O aplikaci</string>
+    <string>About</string>
    </property>
   </action>
   <action name="actionMarkedAllAsRead">
@@ -387,7 +387,7 @@
      <normaloff>:/icons/icons/settings.png</normaloff>:/icons/icons/settings.png</iconset>
    </property>
    <property name="text">
-    <string>Nastavení</string>
+    <string>Settings</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
@@ -395,7 +395,7 @@
   </action>
   <action name="actionHelp">
    <property name="text">
-    <string>Nápověda</string>
+    <string>Help</string>
    </property>
   </action>
  </widget>

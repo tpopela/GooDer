@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Přidat zdroj</string>
+   <string>Add new feed</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resources.qrc">
@@ -30,7 +30,7 @@
     <item row="0" column="0">
      <widget class="QLabel" name="labelFeedAddress">
       <property name="text">
-       <string>Adresa zdroje: </string>
+       <string>Feed address:</string>
       </property>
      </widget>
     </item>
@@ -47,7 +47,7 @@
     <item row="1" column="0">
      <widget class="QLabel" name="labelFeedName">
       <property name="text">
-       <string>Název zdroje (nepovinné)</string>
+       <string>Feed name (optional):</string>
       </property>
      </widget>
     </item>
@@ -67,7 +67,7 @@
     <item row="3" column="0">
      <widget class="QLabel" name="labelLabelName">
       <property name="text">
-       <string>Název nového štítku</string>
+       <string>New label name:</string>
       </property>
      </widget>
     </item>
@@ -94,7 +94,7 @@
     <item row="2" column="0">
      <widget class="QLabel" name="label">
       <property name="text">
-       <string>Název štítku</string>
+       <string>Label name:</string>
       </property>
      </widget>
     </item>
