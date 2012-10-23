@@ -88,14 +88,11 @@ void GooDer::initialize() {
 
     _googleReaderController = new GoogleReaderController();
     _crypt = new SimpleCrypt(Q_UINT64_C(0x0c2ac1a5cea3fe23));
-//    SimpleCrypt crypt(Q_UINT64_C(0x0c2ac1a5cea3fe23));
 
     _timerRefreshFeeds = new QTimer(this);
 
     _checkFeedTime = 0;
-    _currentLabel = 0;
     _commandHistoryCounter = -1;
-    _currentFeed = 0;
     _feedAdded = false;
     _firstRun = true;
     _fetchingEntriesFromHistory = false;
@@ -453,7 +450,6 @@ void GooDer::parseCommands() {
             if (command.right(3) == "off") {
                 ui->toolBar->hide();
             }
-            saveSettings();
         }
         //pokud chceme nastavit viditelnost menu
         else if (command.mid(4,4) == "menu") {
@@ -463,7 +459,6 @@ void GooDer::parseCommands() {
             if (command.right(3) == "off") {
                 ui->menubar->hide();
             }
-            saveSettings();
         }
         else if (command.mid(4,7) == "summary") {
             if (command.right(2) == "on") {
@@ -472,7 +467,6 @@ void GooDer::parseCommands() {
             if (command.right(3) == "off") {
                 _showSummary = false;
             }
-            saveSettings();
         }
         else if (command.mid(4,5) == "flash") {
             if (command.right(2) == "on") {
@@ -487,7 +481,6 @@ void GooDer::parseCommands() {
                 _flashEnabled = false;
                 this->setStatusBarMessage("Flash is disabled");
             }
-            saveSettings();
         }
         else if (command.mid(4,7) == "showall") {
             if (command.right(2) == "on") {
@@ -498,7 +491,6 @@ void GooDer::parseCommands() {
                 _showAllFeeds = false;
                 ui->feedTreeWidget->topLevelItem(0)->setHidden(true);
             }
-            saveSettings();
         }
         //pokud chceme nastavit automaticke skryvani panelu se zdroji
         else if (command.mid(4,8) == "autohide") {
@@ -510,11 +502,12 @@ void GooDer::parseCommands() {
                 ui->frameShowFeedListButton->hide();
                 ui->feedTreeWidget->show();
             }
-            saveSettings();
         }
         else {
             showStatusBarMessage("Unknown command: " + command);
+            return;
         }
+        saveSettings();
     }
     else if (command.left(4) == "info") {
         //pokud chceme nastavit cas automaticke aktualizace zdroju
@@ -590,6 +583,7 @@ void GooDer::callCheckFeeds() {
 
     if (_online) {
         qDebug() << "fetching feeds" << " in GooDer::callCheckFeeds";
+        _timerRefreshFeeds->start();
         _googleReaderController->getFeeds();
     }
     else {
@@ -645,14 +639,15 @@ void GooDer::refreshFeedWidget() {
     bool notFound = true;
 
     QTreeWidgetItem* treeWidgetItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(trUtf8("All feeds")));
+    treeWidgetItem->setText(2, "allfeeds");
     ui->feedTreeWidget->addTopLevelItem(treeWidgetItem);
 
     foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
         //a pridavam je do leveho sloupce se zdroji
-        QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-        newEntry->setText(0, feed->getTitle());
-        newEntry->setText(2, feed->getId());
-        treeWidgetItem->addChild(newEntry);
+        QTreeWidgetItem *newItem = new QTreeWidgetItem;
+        newItem->setText(0, feed->getTitle());
+        newItem->setText(2, feed->getId());
+        treeWidgetItem->addChild(newItem);
 
         //pridani noveho prvku s nazvem stitku
         if (!feed->getLabel().isEmpty()) {
@@ -664,7 +659,9 @@ void GooDer::refreshFeedWidget() {
                     //a pokousim se najit zda je jiz v levem sloupci se zdroji uveden
                     QList<QTreeWidgetItem*> itemsFound = ui->feedTreeWidget->findItems(label, Qt::MatchExactly, 0);
                     if (itemsFound.isEmpty()) {
-                        ui->feedTreeWidget->addTopLevelItem(new QTreeWidgetItem((QTreeWidget*)0, QStringList(label)));
+                        QTreeWidgetItem* labelItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(label));
+                        labelItem->setText(2, "label");
+                        ui->feedTreeWidget->addTopLevelItem(labelItem);
                     }
                     QList<QTreeWidgetItem*> labels = ui->feedTreeWidget->findItems(label, Qt::MatchExactly, 0);
 
@@ -674,10 +671,10 @@ void GooDer::refreshFeedWidget() {
                         }
                     }
                     if (notFound) {
-                        newEntry = new QTreeWidgetItem;
-                        newEntry->setText(0, feed->getTitle());
-                        newEntry->setText(2, feed->getId());
-                        labels.at(0)->addChild(newEntry);
+                        newItem = new QTreeWidgetItem;
+                        newItem->setText(0, feed->getTitle());
+                        newItem->setText(2, feed->getId());
+                        labels.at(0)->addChild(newItem);
                     }
                     notFound = true;
                }
@@ -721,62 +718,28 @@ void GooDer::getEntriesReady() {
 
     if (!_firstRun) {
 /////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
-            if (feed->getTitle() == ui->feedTreeWidget->currentItem()->text(0) && feed->getUnreadCount() > 0) {
-                ui->entriesTreeWidget->clear();
-                foreach (Entry* entry, feed->getEntriesList()) {
-                    QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-                    newEntry->setText(0, entry->getTitle());
-                    newEntry->setText(1, feed->getTitle());
-                    newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-                    newEntry->setText(3, entry->getAuthor());
-                    newEntry->setText(4, entry->getId());
+        QString feedId = ui->feedTreeWidget->currentItem()->text(2);
+        if (feedId == "allfeeds" || feedId == "label")
+            return;
 
-                    if (!entry->isRead()) {
-                        newEntry->setFont(0, _fontBold);
-                        newEntry->setFont(1, _fontBold);
-                        newEntry->setFont(2, _fontBold);
-                        newEntry->setFont(3, _fontBold);
-                    }
-                    ui->entriesTreeWidget->addTopLevelItem(newEntry);
-                }
-                break;
-            }
-        }
-
+        ui->entriesTreeWidget->clear();
+        addFeedEntriesToEntriesList(_googleReaderController->getFeedDB(feedId));
         checkEntriesFeedsNumbers();
         differentiateEntriesLines();
     }
-
-    if (_firstRun) {
-
+    else {
         //zjistit jestli je nova polozka v aktualne zvolenym zdroji.. podle toho prepisovat ve widgetu
         ui->entriesTreeWidget->clear();
 
         //a vypisi jej do praveho sloupce s polozkami
-        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
-            foreach (Entry* entry, feed->getEntriesList()) {
-                QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-                newEntry->setText(0, entry->getTitle());
-                newEntry->setText(1, feed->getTitle());
-                newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-                newEntry->setText(3, entry->getAuthor());
-                newEntry->setText(4, entry->getId());
-
-                if (!entry->isRead()) {
-                    newEntry->setFont(0, _fontBold);
-                    newEntry->setFont(1, _fontBold);
-                    newEntry->setFont(2, _fontBold);
-                    newEntry->setFont(3, _fontBold);
-                }
-                ui->entriesTreeWidget->addTopLevelItem(newEntry);
-            }
-        }
+        foreach (Feed* feed, _googleReaderController->getFeedsDB())
+            addFeedEntriesToEntriesList(feed);
 
         differentiateEntriesLines();
 
         _firstRun = false;
     }
+
     if (!_showAllFeeds) ui->feedTreeWidget->topLevelItem(0)->setHidden(true);
 }
 
@@ -1247,19 +1210,19 @@ void GooDer::getEntriesFromFeed(bool moveToNextEntry) {
                 if (feed->getTitle() == ui->feedTreeWidget->currentItem()->text(0)) {
                     foreach (Entry* entry, feed->getEntriesList()) {
 
-                        QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-                        newEntry->setText(0, entry->getTitle());
-                        newEntry->setText(1, feed->getTitle());
-                        newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-                        newEntry->setText(3, entry->getAuthor());
-                        newEntry->setText(4, entry->getId());
+                        QTreeWidgetItem *newItem = new QTreeWidgetItem;
+                        newItem->setText(0, entry->getTitle());
+                        newItem->setText(1, feed->getTitle());
+                        newItem->setData(2, Qt::DisplayRole, entry->getPublishedDate());
+                        newItem->setText(3, entry->getAuthor());
+                        newItem->setText(4, entry->getId());
                         if (!entry->isRead()) {
-                            newEntry->setFont(0, _fontBold);
-                            newEntry->setFont(1, _fontBold);
-                            newEntry->setFont(2, _fontBold);
-                            newEntry->setFont(3, _fontBold);
+                            newItem->setFont(0, _fontBold);
+                            newItem->setFont(1, _fontBold);
+                            newItem->setFont(2, _fontBold);
+                            newItem->setFont(3, _fontBold);
                         }
-                        ui->entriesTreeWidget->addTopLevelItem(newEntry);
+                        ui->entriesTreeWidget->addTopLevelItem(newItem);
                     }
                 }
             }
@@ -1316,6 +1279,29 @@ void GooDer::setFeedListWidth() {
     ui->feedTreeWidget->setFixedWidth(feedListWidth - 20);
 }
 
+void GooDer::addFeedEntriesToEntriesList(Feed* feed) {
+
+    foreach (Entry* entry, feed->getEntriesList()) {
+
+        QTreeWidgetItem *newItem = new QTreeWidgetItem;
+
+        newItem->setText(0, entry->getTitle());
+        newItem->setText(1, feed->getTitle());
+        newItem->setData(2, Qt::DisplayRole, entry->getPublishedDate());
+        newItem->setText(3, entry->getAuthor());
+        newItem->setText(4, entry->getId());
+
+        if (!entry->isRead()) {
+            newItem->setFont(0, _fontBold);
+            newItem->setFont(1, _fontBold);
+            newItem->setFont(2, _fontBold);
+            newItem->setFont(3, _fontBold);
+        }
+
+        ui->entriesTreeWidget->addTopLevelItem(newItem);
+    }
+}
+
 /*!
 \brief Po zvoleni zdroje ci stitku zobrazi polozky, ktere mu nalezi
 */
@@ -1326,133 +1312,28 @@ void GooDer::showEntriesOnSelectedFeed(QModelIndex index) {
     //predchozi obsah vymazu (pokud bych toto neudelal, nove polozky by se pridavali za aktualni
     ui->entriesTreeWidget->clear();
 
-    int sum = 0;
-
     if (ui->feedTreeWidget->topLevelItemCount() <= 0)
         return;
 
     // if All feeds entry is selected
-    if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(0)->text(0)) {
+    if (ui->feedTreeWidget->currentItem()->text(2) == "allfeeds") {
         //vlozim do ni vsechny odebirane zdroje
-        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
-            foreach (Entry* entry, feed->getEntriesList()) {
-                QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-                //nastavim informace, o polozce
-                newEntry->setText(0, entry->getTitle());
-                newEntry->setText(1, feed->getTitle());
-                newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-                newEntry->setText(3, entry->getAuthor());
-                newEntry->setText(4, entry->getId());
-                if (!entry->isRead()) {
-                    newEntry->setFont(0, _fontBold);
-                    newEntry->setFont(1, _fontBold);
-                    newEntry->setFont(2, _fontBold);
-                    newEntry->setFont(3, _fontBold);
-                }
-                ui->entriesTreeWidget->addTopLevelItem(newEntry);
-            }
-        }
+        foreach (Feed* feed, _googleReaderController->getFeedsDB())
+            addFeedEntriesToEntriesList(feed);
     }
     // label is selected
-    else if (_googleReaderController->getUnreadCountInLabel(ui->feedTreeWidget->currentItem()->text(0)) != -1) {
+    else if (ui->feedTreeWidget->currentItem()->text(2) == "label") {
         QString label = ui->feedTreeWidget->currentItem()->text(0);
 
-        for (int m = 0; m < ui->feedTreeWidget->topLevelItemCount(); m++) {
-            if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(m)->text(0)) {
-                _currentLabel = m;
-                _currentFeed = sum;
-                break;
-            }
-            sum += ui->feedTreeWidget->topLevelItem(m)->childCount();
-        }
-
-        foreach (Feed* feed, _googleReaderController->getFeedsInLabelDB(label)) {
-            foreach (Entry* entry, feed->getEntriesList()) {
-                QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-                newEntry->setText(0, entry->getTitle());
-                newEntry->setText(1, feed->getTitle());
-                newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-                newEntry->setText(3, entry->getAuthor());
-
-                if (!entry->isRead()) {
-                    newEntry->setFont(0, _fontBold);
-                    newEntry->setFont(1, _fontBold);
-                    newEntry->setFont(2, _fontBold);
-                    newEntry->setFont(3, _fontBold);
-                }
-
-                ui->entriesTreeWidget->addTopLevelItem(newEntry);
-            }
-        }
+        foreach (Feed* feed, _googleReaderController->getFeedsInLabelDB(label))
+            addFeedEntriesToEntriesList(feed);
     }
     // feed is selected
     else {
-        for (int m = 0; m < ui->feedTreeWidget->topLevelItemCount(); m++) {
-            if (ui->feedTreeWidget->currentItem()->parent()->text(0) == ui->feedTreeWidget->topLevelItem(m)->text(0)) {
-                for (int n = 0; n < ui->feedTreeWidget->currentItem()->parent()->childCount(); n++) {
-                    if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(m)->child(n)->text(0)) {
-                        _currentLabel = m;
-                        _currentFeed = n + sum;
-                        break;
-                    }
-                }
-            }
-            sum += ui->feedTreeWidget->topLevelItem(m)->childCount();
-        }
-
         QString feedId = ui->feedTreeWidget->currentItem()->text(2);
-        QString feed = _googleReaderController->getFeedDB(feedId);
+        Feed* feed = _googleReaderController->getFeedDB(feedId);
 
-        foreach (Entry* entry, feed->getEntriesList()) {
-            QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-
-            newEntry->setText(0, entry->getTitle());
-            newEntry->setText(1, feed->getTitle());
-            newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-            newEntry->setText(3, entry->getAuthor());
-            newEntry->setText(4, entry->getId());
-
-            if (!entry->isRead()) {
-                newEntry->setFont(0, _fontBold);
-                newEntry->setFont(1, _fontBold);
-                newEntry->setFont(2, _fontBold);
-                newEntry->setFont(3, _fontBold);
-            }
-
-            ui->entriesTreeWidget->addTopLevelItem(newEntry);
-        }
-
-        /*
-        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
-            if (feed->getTitle() == ui->feedTreeWidget->currentItem()->text(0)) {
-                if (feed->getEntriesList().count() == 0) {
-                    _lastEntriesCount = ui->entriesTreeWidget->topLevelItemCount();
-                    _googleReaderController->getSpecifiedNumberOfEntriesFromFeed(feed->getId(), feed->getEntriesList().count()+5);
-                }
-                if (feed->getUnreadCount() > feed->getEntriesList().count()) {
-                    _lastEntriesCount = ui->entriesTreeWidget->topLevelItemCount();
-                    _googleReaderController->getSpecifiedNumberOfEntriesFromFeed(feed->getId(), feed->getUnreadCount());
-                }
-                foreach (Entry* entry, feed->getEntriesList()) {
-                    QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-                    //nastavim informace, o polozce
-                    newEntry->setText(0, entry->getTitle());
-                    newEntry->setText(1, feed->getTitle());
-                    newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-                    newEntry->setText(3, entry->getAuthor());
-                    newEntry->setText(4, entry->getId());
-                    if (!entry->isRead()) {
-                        newEntry->setFont(0, _fontBold);
-                        newEntry->setFont(1, _fontBold);
-                        newEntry->setFont(2, _fontBold);
-                        newEntry->setFont(3, _fontBold);
-                    }
-                    ui->entriesTreeWidget->addTopLevelItem(newEntry);
-                }
-                break;
-            }
-        }
-        */
+        addFeedEntriesToEntriesList(feed);
     }
 
     ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(-1));
@@ -1673,56 +1554,56 @@ void GooDer::showNotification() {
 \brief Prejde na dalsi polozku v seznamu polozek
 */
 void GooDer::readNextEntry() {
-    //pokud se mam kam pohybovat
-    if (ui->entriesTreeWidget->topLevelItemCount() > 0) {
-        //pokud je oznacena polozka
-        if (ui->entriesTreeWidget->currentIndex().row() != -1) {
-            //pokud nejsem na konci seznamu
-            if (ui->entriesTreeWidget->currentIndex().row() != ui->entriesTreeWidget->topLevelItemCount()-1) {
-                //prejdu na dalsi polozku
-                ui->entriesTreeWidget->setCurrentIndex(ui->entriesTreeWidget->indexBelow(ui->entriesTreeWidget->currentIndex()));
-                emit signalReadNextEntry(ui->entriesTreeWidget->currentIndex());
-            }
-            //pokud jsem na konci seznamu
-            else {
-                //stahnu dalsich 5 plozek z databaze
-                for (int x = 0; x < _googleReaderController->getFeedsDB().count(); x++) {
-                    if (ui->feedTreeWidget->currentItem()->text(0) == _googleReaderController->getFeedsDB().at(x)->getTitle()) {
-                        _lastEntriesCount = ui->entriesTreeWidget->topLevelItemCount();
-                        _fetchingEntriesFromHistory = true;
-                        _fetchingEntriesFromHistoryActivated = true;
-                        _googleReaderController->getSpecifiedNumberOfEntriesFromFeed(_googleReaderController->getFeedsDB().at(x)->getId(), _googleReaderController->getFeedsDB().at(x)->entries.count()+5);
-//                        googleReaderController->getNumberOfEntriesFromFeed(googleReaderController->getFeedsFromDatabase().at(x)->getId(), googleReaderController->getFeedsFromDatabase().at(x)->entries.count()+5, true);
-                    }
-                }
-            }
-        }
-        //pokud neni nastavim jako aktualni prvni polozku
-        else {
-            QPoint point(0,0);
-            QModelIndex index(ui->entriesTreeWidget->indexAt(point));
-            ui->entriesTreeWidget->setCurrentIndex(index);
-            emit signalReadNextEntry(index);
-        }
+
+    if (ui->entriesTreeWidget->topLevelItemCount() <= 0)
+        return;
+
+    if (ui->entriesTreeWidget->currentIndex().row() == -1) {
+        ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(0));
+        emit signalReadNextEntry(ui->entriesTreeWidget->currentIndex());
+        return;
     }
+
+    QTreeWidgetItem* currentItem = ui->entriesTreeWidget->currentItem();
+
+    if (ui->entriesTreeWidget->itemBelow(currentItem) == NULL) {
+        //stahnu dalsich 5 plozek z databaze
+        _lastEntriesCount = ui->entriesTreeWidget->topLevelItemCount();
+        _fetchingEntriesFromHistory = true;
+        _fetchingEntriesFromHistoryActivated = true;
+
+        QString feedId = ui->feedTreeWidget->currentItem()->text(2);
+        Feed* feed = _googleReaderController->getFeedDB(feedId);
+        _googleReaderController->getSpecifiedNumberOfEntriesFromFeed(feedId, feed->entries.count()+5);
+    }
+    else {
+        ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->itemBelow(currentItem));
+    }
+
+    emit signalReadNextEntry(ui->entriesTreeWidget->currentIndex());
 }
 
 /*!
 \brief Prejde na predchozi polozku v seznamu polozek
 */
 void GooDer::readPreviousEntry() {
-    //pokud se mam kam pohybovat
-    if (ui->entriesTreeWidget->topLevelItemCount() > 0) {
-        //a pokud je zvolena polozka
-        if (ui->entriesTreeWidget->currentIndex().row() != -1) {
-            //a pokud nejsem na zacatku
-            if (ui->entriesTreeWidget->currentIndex().row() > 0) {
-                //presunu se na predchozi polozku
-                ui->entriesTreeWidget->setCurrentIndex(ui->entriesTreeWidget->indexAbove(ui->entriesTreeWidget->currentIndex()));
-                emit signalReadPreviousEntry(ui->entriesTreeWidget->currentIndex());
-            }
-        }
+
+    if (ui->entriesTreeWidget->topLevelItemCount() <= 0)
+        return;
+
+    if (ui->entriesTreeWidget->currentIndex().row() == -1) {
+        ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(0));
+        emit signalReadPreviousEntry(ui->entriesTreeWidget->currentIndex());
+        return;
     }
+
+    QTreeWidgetItem* currentItem = ui->entriesTreeWidget->currentItem();
+
+    if (ui->entriesTreeWidget->itemAbove(currentItem) == NULL)
+        return;
+
+    ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->itemAbove(currentItem));
+    emit signalReadPreviousEntry(ui->entriesTreeWidget->currentIndex());
 }
 
 /*!
@@ -1730,38 +1611,43 @@ void GooDer::readPreviousEntry() {
 */
 void GooDer::readNextFeed() {
 
-    int sumOfFeeds = 0;
+    // if there are items in widget
+    if (ui->feedTreeWidget->topLevelItemCount() <= 0)
+        return;
 
-    //pokud se mam kam pohybovat
-    if (ui->feedTreeWidget->topLevelItemCount() > 0) {
-        //spocitam si celkovy pocet zdroju v panelu
-        for (int i = 0; i < ui->feedTreeWidget->topLevelItemCount(); i++) {
-            sumOfFeeds += ui->feedTreeWidget->topLevelItem(i)->childCount();
-        }
-        //pokud je aktualne oznacena polozka
-        if (ui->feedTreeWidget->currentIndex().row() != -1) {
-            //pokud nejsem na konci seznamu
-            if (_currentFeed < sumOfFeeds-1) {
-                //posunu se
-                _currentFeed++;
-                for (int j = 0; j < ui->feedTreeWidget->topLevelItemCount(); j++) {
-                    //pokud je dalsi polozkou stitek preskocim jej
-                    if (ui->feedTreeWidget->itemBelow(ui->feedTreeWidget->currentItem())->text(0) == ui->feedTreeWidget->topLevelItem(j)->text(0)) {
-                       ui->feedTreeWidget->setCurrentIndex(ui->feedTreeWidget->indexBelow(ui->feedTreeWidget->currentIndex()));
-                       _currentLabel++;
-                    }
-                }
-                ui->feedTreeWidget->setCurrentIndex(ui->feedTreeWidget->indexBelow(ui->feedTreeWidget->currentIndex()));
-                emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
-            }
-        }
-        //pokud neni oznacena polozka presunu se na prvni
-        else {
-            _currentFeed++;
-            ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemAt(0, 20));
-            emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
-        }
+    // if no item is selected move to first label
+    if (ui->feedTreeWidget->currentIndex().row() == -1) {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(0));
+        emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
     }
+
+    QTreeWidgetItem* currentItem = ui->feedTreeWidget->currentItem();
+
+    if (ui->feedTreeWidget->itemBelow(currentItem) == NULL)
+        return;
+
+    // if next item is label skip it
+    if (ui->feedTreeWidget->itemBelow(currentItem)->text(2) == "label") {
+
+        QTreeWidgetItem* labelItem = ui->feedTreeWidget->itemBelow(currentItem);
+
+        // find next item that's not label
+        // there can be 2 or more empty label in row
+        while (labelItem->text(2) == "label")
+        {
+            labelItem = ui->feedTreeWidget->itemBelow(labelItem);
+
+            if (ui->feedTreeWidget->itemBelow(labelItem) == NULL)
+                return;
+        }
+
+        ui->feedTreeWidget->setCurrentItem(labelItem);
+    }
+    else {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemBelow(currentItem));
+    }
+
+    emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
 }
 
 /*!
@@ -1769,37 +1655,48 @@ void GooDer::readNextFeed() {
 */
 void GooDer::readPreviousFeed() {
 
-    bool goOverLabelBack = false;
+    // if there are items in widget
+    if (ui->feedTreeWidget->topLevelItemCount() <= 0)
+        return;
 
-    //pokud se mam kde pohybovat
-    if (ui->feedTreeWidget->topLevelItemCount() > 0 && ui->feedTreeWidget->currentIndex().row() != -1) {
-        //pokud nejsem na zacatku
-        if (ui->feedTreeWidget->currentItem()->text(0) != ui->feedTreeWidget->topLevelItem(0)->text(0)) {
-            //pokud se mam kam pohybovat
-            if (ui->feedTreeWidget->currentIndex().row() != -1 && _currentFeed > 0) {
-                    //zjistim jestli jsem na stitku
-                    for (int i = 0; i < ui->feedTreeWidget->topLevelItemCount(); i++) {
-                        //pokud ano
-                        if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(i)->text(0)) {
-                            //pokud je predchozi polozka stitek preskocim jej
-                            goOverLabelBack = true;
-                            _currentLabel--;
-                        }
-                    }
-                    //posunu se na predchozi zdroj
-                    if (!goOverLabelBack) _currentFeed--;
-                    for (int j = 0; j < ui->feedTreeWidget->topLevelItemCount(); j++) {
-                        if (ui->feedTreeWidget->itemAbove(ui->feedTreeWidget->currentItem())->text(0) == ui->feedTreeWidget->topLevelItem(j)->text(0)) {
-                            //nastavim novou aktualni polozku
-                            ui->feedTreeWidget->setCurrentIndex(ui->feedTreeWidget->indexAbove(ui->feedTreeWidget->currentIndex()));
-                            _currentLabel--;
-                        }
-                    }
-                    ui->feedTreeWidget->setCurrentIndex(ui->feedTreeWidget->indexAbove(ui->feedTreeWidget->currentIndex()));
-                    emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
-            }
-        }
+    // if no item is selected move to first label
+    if (ui->feedTreeWidget->currentIndex().row() == -1) {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(0));
+        emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
     }
+
+    QTreeWidgetItem* currentItem = ui->feedTreeWidget->currentItem();
+
+    if (ui->feedTreeWidget->itemAbove(currentItem) == NULL)
+        return;
+
+    if (ui->feedTreeWidget->itemAbove(currentItem)->text(2) == "allfeeds")
+        return;
+
+    // if previous item is label skip it
+    if (ui->feedTreeWidget->itemAbove(currentItem)->text(2) == "label") {
+        QTreeWidgetItem* labelItem = ui->feedTreeWidget->itemAbove(currentItem);
+
+        // find previous item that's not label
+        // there can be 2 or more empty label in row
+        while (labelItem->text(2) == "label")
+        {
+            labelItem = ui->feedTreeWidget->itemAbove(labelItem);
+
+            if (ui->feedTreeWidget->itemAbove(labelItem) == NULL)
+                return;
+        }
+
+        if (labelItem->text(2) == "allfeeds")
+            return;
+
+        ui->feedTreeWidget->setCurrentItem(labelItem);
+    }
+    else {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemAbove(currentItem));
+    }
+
+    emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
 }
 
 
@@ -1807,89 +1704,90 @@ void GooDer::readPreviousFeed() {
 \brief Prejde na nasledujici stitek
 */
 void GooDer::readNextLabel() {
-    //pokud se mam kam pohybovat
-    if (ui->feedTreeWidget->currentIndex().row() != -1 && ui->feedTreeWidget->topLevelItemCount() > 0) {
-        bool breaking = false;
-        bool onFeed = false;
-        //zjistim jestli se nachazim na stitku nebo na zdroji
-        for (int x = _currentLabel; x < ui->feedTreeWidget->topLevelItemCount(); x++) {
-            if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(x)->text(0)) {
-                onFeed = true;
-            }
-        }
-        //pokud nejsem na poslednim stitku
-        if (ui->feedTreeWidget->topLevelItemCount()-1 != _currentLabel) {
-            if (ui->feedTreeWidget->currentItem()->text(0) != ui->feedTreeWidget->topLevelItem(ui->feedTreeWidget->topLevelItemCount()-1)->text(0)) {
-                //pokud jsem na zdroji
-                if (onFeed) {
-                    for (int i = _currentLabel; i < ui->feedTreeWidget->topLevelItemCount(); i++) {
-                        for (int j = 0; j < ui->feedTreeWidget->topLevelItem(i)->childCount(); j++) {
-                            //prejdu na nasledujici stitek
-                            if (ui->feedTreeWidget->itemBelow(ui->feedTreeWidget->currentItem())->text(0) == ui->feedTreeWidget->topLevelItem(i)->text(0)) {
-                                _currentLabel++;
-                                breaking = true;
-                                break;
-                            }
-                            else if (!breaking) {
-                                ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemBelow(ui->feedTreeWidget->currentItem()));
-                                _currentFeed++;
-                            }
-                        }
-                    }
-                }
-                //pokud jsem na stitku
-                else {
-                    for (int i = _currentLabel; i < ui->feedTreeWidget->topLevelItemCount()-1; i++) {
-                        for (int j = 0; j < ui->feedTreeWidget->topLevelItem(i)->childCount(); j++) {
-                            //prejdu na dalsi stitek
-                            if (ui->feedTreeWidget->itemBelow(ui->feedTreeWidget->currentItem())->text(0) == ui->feedTreeWidget->topLevelItem(i+1)->text(0)) {
-                                _currentLabel++;
-                                breaking = true;
-                                break;
-                            }
-                            else if (!breaking) {
-                                ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemBelow(ui->feedTreeWidget->currentItem()));
-                                _currentFeed++;
-                            }
-                        }
-                    }
-                }
-                ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(_currentLabel));
-                emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
-            }
-        }
-    }
-    //prejdu na prvni stitek Vsechny polozky
-    else {
-        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemAt(0, 0));
+
+    // if there are items in widget
+    if (ui->feedTreeWidget->topLevelItemCount() <= 0)
+        return;
+
+    // if no item is selected move to first label
+    if (ui->feedTreeWidget->currentIndex().row() == -1) {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(0));
         emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
     }
+
+    QTreeWidgetItem* currentItem = ui->feedTreeWidget->currentItem();
+
+    if (ui->feedTreeWidget->itemBelow(currentItem) == NULL)
+        return;
+
+    // if next item is feed skip it
+    if (ui->feedTreeWidget->itemBelow(currentItem)->text(2) != "label") {
+
+        QTreeWidgetItem* labelItem = ui->feedTreeWidget->itemBelow(currentItem);
+
+        // find next label
+        while (labelItem->text(2) != "label")
+        {
+            labelItem = ui->feedTreeWidget->itemBelow(labelItem);
+
+            if (ui->feedTreeWidget->itemBelow(labelItem) == NULL)
+                return;
+        }
+
+        ui->feedTreeWidget->setCurrentItem(labelItem);
+    }
+    else {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemBelow(currentItem));
+    }
+
+    emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
 }
 
 /*!
 \brief Prejde na predchozi stitek
 */
 void GooDer::readPreviousLabel() {
-    //pokud mam kam jit
-    if (ui->feedTreeWidget->topLevelItemCount() > 0 && ui->feedTreeWidget->currentIndex().row() != -1) {
-        //a pokud nejsem na zacatku seznamu zdroju
-        if (ui->feedTreeWidget->currentItem()->text(0) != ui->feedTreeWidget->topLevelItem(0)->text(0)) {
-            //pokud jsem na jinem stitku
-            if (_currentLabel > 0) {
-                //presunu se
-                _currentLabel--;
-                ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(_currentLabel));
-                _currentFeed -= ui->feedTreeWidget->currentItem()->childCount();
-                //zobrazim polozky
-                emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
-            }
-            else {
-                //presunu se na stitek vsechny polozky
-                ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(0));
-                emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
+
+    // if there are items in widget
+    if (ui->feedTreeWidget->topLevelItemCount() <= 0)
+        return;
+
+    // if no item is selected move to first label
+    if (ui->feedTreeWidget->currentIndex().row() == -1) {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(0));
+        emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
+    }
+
+    QTreeWidgetItem* currentItem = ui->feedTreeWidget->currentItem();
+
+    if (ui->feedTreeWidget->itemAbove(currentItem) == NULL)
+        return;
+
+    // if previous item is feed skip it
+    if (ui->feedTreeWidget->itemAbove(currentItem)->text(2) != "label") {
+        QTreeWidgetItem* labelItem = ui->feedTreeWidget->itemAbove(currentItem);
+
+        // find previous label
+        while (labelItem->text(2) != "label" && labelItem->text(2) != "allfeeds")
+        {
+            labelItem = ui->feedTreeWidget->itemAbove(labelItem);
+            QString aaa = labelItem->text(2);
+
+            if (ui->feedTreeWidget->itemAbove(labelItem) == NULL) {
+                if (labelItem->text(2) != "allfeeds" &&
+                    labelItem->text(2) != "label")
+                    return;
             }
         }
+
+        ui->feedTreeWidget->setCurrentItem(labelItem);
     }
+    else {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemAbove(currentItem));
+    }
+
+    emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
+
 }
 
 /*!
@@ -1956,7 +1854,7 @@ void GooDer::searchEntry() {
 
     //nalezene polozky vypiseme
     foreach (Entry* entrySearched, searchResult) {
-        QTreeWidgetItem *newEntry = new QTreeWidgetItem;
+        QTreeWidgetItem *newItem = new QTreeWidgetItem;
         QString feedName = "";
 
         foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
@@ -1967,19 +1865,19 @@ void GooDer::searchEntry() {
                 }
             }
         }
-        newEntry->setText(0, entrySearched->getTitle());
-        newEntry->setText(1, feedName);
-        newEntry->setData(2, Qt::DisplayRole, entrySearched->getPublishedDate());
-        newEntry->setText(3, entrySearched->getAuthor());
-        newEntry->setText(4, entrySearched->getId());
+        newItem->setText(0, entrySearched->getTitle());
+        newItem->setText(1, feedName);
+        newItem->setData(2, Qt::DisplayRole, entrySearched->getPublishedDate());
+        newItem->setText(3, entrySearched->getAuthor());
+        newItem->setText(4, entrySearched->getId());
         if (!entrySearched->isRead()) {
-            newEntry->setFont(0, _fontBold);
-            newEntry->setFont(1, _fontBold);
-            newEntry->setFont(2, _fontBold);
-            newEntry->setFont(3, _fontBold);
+            newItem->setFont(0, _fontBold);
+            newItem->setFont(1, _fontBold);
+            newItem->setFont(2, _fontBold);
+            newItem->setFont(3, _fontBold);
         }
 
-        ui->entriesTreeWidget->addTopLevelItem(newEntry);
+        ui->entriesTreeWidget->addTopLevelItem(newItem);
     }
 
     differentiateEntriesLines();

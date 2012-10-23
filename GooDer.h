@@ -161,7 +161,6 @@ class GooDer : public QMainWindow {
 
         int _commandHistoryCounter;
         int _checkFeedTime;
-        int _currentFeed;
         int _currentLabel;
         int _lastEntriesCount;
 
@@ -204,7 +203,7 @@ class GooDer : public QMainWindow {
         void markUIFeedAsUnread(int, int, int);
         void setEntriesWidget();
         void refreshFeedWidget();
-        void addFeedEntriesToEntriesList(Feed*) {
+        void addFeedEntriesToEntriesList(Feed*);
 };
 
 #endif // MAINWINDOW_H
