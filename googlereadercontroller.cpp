@@ -49,13 +49,13 @@ int GoogleReaderController::getUnreadCountInFeed(QString feedName) {
 /*!
 \brief
 */
-void GoogleReaderController::markLabelAsRead(QString labelName) {
+void GoogleReaderController::markLabelAsRead(QString label) {
 
-    QList<QString> feedsInLabel = _database->getFeedsInLabel(labelName);
+    QList<Feed*> feedsInLabel = _database->getFeedsInLabel(label);
 
-    foreach (QString feedId, feedsInLabel) {
-        _googleReader->markFeedAsRead(feedId);
-        _database->markFeedAsRead(feedId);
+    foreach (Feed* feed, feedsInLabel) {
+        _googleReader->markFeedAsRead(feed->getId());
+        _database->markFeedAsRead(feed->getId());
     }
 }
 
@@ -187,7 +187,7 @@ void GoogleReaderController::fetchFeedsWithNoEntries() {
     _feedsWithNoEntriesCount = 0;
     _alreadyFetchingNoEntries = true;
 
-    foreach (Feed* feed, this->getFeedsFromDatabase())
+    foreach (Feed* feed, this->getFeedsDB())
     {
         if (feed->getEntriesList().count() == 0)
         {
@@ -221,14 +221,14 @@ void GoogleReaderController::rawGetEntries(QByteArray rawEntries) {
     }
 }
 
-void GoogleReaderController::addFeedLabel(QString feedId, QString labelName) {
-    _googleReader->addFeedLabel(feedId, labelName);
-    _database->addFeedLabel(feedId, labelName);
+void GoogleReaderController::addFeedLabel(QString feedId, QString label) {
+    _googleReader->addFeedLabel(feedId, label);
+    _database->addFeedLabel(feedId, label);
 }
 
-void GoogleReaderController::removeFeedLabel(QString feedId, QString labelName) {
-    _googleReader->removeFeedLabel(feedId, labelName);
-    _database->removeFeedLabel(feedId, labelName);
+void GoogleReaderController::removeFeedLabel(QString feedId, QString label) {
+    _googleReader->removeFeedLabel(feedId, label);
+    _database->removeFeedLabel(feedId, label);
 }
 
 void GoogleReaderController::addFeed(QString address, QString name, QString label) {
@@ -241,8 +241,16 @@ void GoogleReaderController::removeFeed(QString feedId) {
     _database->removeFeed(feedId);
 }
 
-QList<Feed*> GoogleReaderController::getFeedsFromDatabase() {
+Feed* GoogleReaderController::getFeedDB(QString feedId) {
+    return _database->getFeed(feedId);
+}
+
+QList<Feed*> GoogleReaderController::getFeedsDB() {
     return _database->getDatabase();
+}
+
+QList<Feed*> GoogleReaderController::getFeedsInLabelDB(QString label) {
+    return _database->getFeedsInLabel(label);
 }
 
 /******************************************************************************

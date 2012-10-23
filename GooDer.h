@@ -204,6 +204,7 @@ class GooDer : public QMainWindow {
         void markUIFeedAsUnread(int, int, int);
         void setEntriesWidget();
         void refreshFeedWidget();
+        void addFeedEntriesToEntriesList(Feed*) {
 };
 
 #endif // MAINWINDOW_H

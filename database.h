@@ -30,9 +30,10 @@ public:
     QString getFeedIdForEntry(QString);
 
     Entry* getEntry(QString);
+    Feed* getFeed(QString);
 
     QList<Feed*> getDatabase() { return _storage; }
-    QList<QString> getFeedsInLabel(QString);
+    QList<Feed*> getFeedsInLabel(QString);
     QList<QString> getLabelsList();
 
 private:

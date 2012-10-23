@@ -96,15 +96,15 @@ int Database::getUnreadCountInFeed(QString feedId) {
 /*!
 \brief
 */
-QList<QString> Database::getFeedsInLabel(QString label) {
+QList<Feed*> Database::getFeedsInLabel(QString label) {
 
-    QList<QString> feedsList;
+    QList<Feed*> feedsList;
 
     foreach (Feed* feed, _storage) {
         QList<QString> tempLabelList = feed->getLabel();
         foreach (QString tempLabel, tempLabelList) {
             if (label == tempLabel) {
-                feedsList.append(feed->getId());
+                feedsList.append(feed);
             }
         }
     }
@@ -155,6 +155,14 @@ QString Database::getEntryLink(QString id) {
             }
         }
     }
+    return NULL;
+}
+
+Feed* Database::getFeed(QString id) {
+    foreach (Feed* feed, _storage)
+        if (feed->getId() == id)
+            return feed;
+
     return NULL;
 }
 

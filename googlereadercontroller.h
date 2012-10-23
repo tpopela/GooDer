@@ -21,7 +21,9 @@ public:
     void addFeed(QString, QString, QString);
     void removeFeed(QString);
     QList<QString> getLabelsList();
-    QList<Feed*> getFeedsFromDatabase();
+    Feed* getFeedDB(QString);
+    QList<Feed*> getFeedsDB();
+    QList<Feed*> getFeedsInLabelDB(QString);
     QString getIdForFeed(QString);
     QString getEntryLink(QString);
     Entry* getEntry(QString);

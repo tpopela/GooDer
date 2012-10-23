@@ -647,7 +647,7 @@ void GooDer::refreshFeedWidget() {
     QTreeWidgetItem* treeWidgetItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(trUtf8("All feeds")));
     ui->feedTreeWidget->addTopLevelItem(treeWidgetItem);
 
-    foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+    foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
         //a pridavam je do leveho sloupce se zdroji
         QTreeWidgetItem *newEntry = new QTreeWidgetItem;
         newEntry->setText(0, feed->getTitle());
@@ -721,7 +721,7 @@ void GooDer::getEntriesReady() {
 
     if (!_firstRun) {
 /////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             if (feed->getTitle() == ui->feedTreeWidget->currentItem()->text(0) && feed->getUnreadCount() > 0) {
                 ui->entriesTreeWidget->clear();
                 foreach (Entry* entry, feed->getEntriesList()) {
@@ -754,7 +754,7 @@ void GooDer::getEntriesReady() {
         ui->entriesTreeWidget->clear();
 
         //a vypisi jej do praveho sloupce s polozkami
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             foreach (Entry* entry, feed->getEntriesList()) {
                 QTreeWidgetItem *newEntry = new QTreeWidgetItem;
                 newEntry->setText(0, entry->getTitle());
@@ -1221,7 +1221,7 @@ void GooDer::createNewLabel(QString labelName) {
 */
 void GooDer::removeLabel() {
     if (ui->feedTreeWidget->currentItem()->parent()->text(0) != ui->feedTreeWidget->topLevelItem(0)->text(0)) {
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             if (ui->feedTreeWidget->currentItem()->text(0) == feed->getTitle()) {
                 _googleReaderController->removeFeedLabel(feed->getId(), ui->feedTreeWidget->currentItem()->parent()->text(0));
                 break;
@@ -1243,7 +1243,7 @@ void GooDer::getEntriesFromFeed(bool moveToNextEntry) {
             ui->entriesTreeWidget->clear();
 
             //do panelu s polozkami vypisu vsechny polozky ze zdroje i s nove ziskanymi
-            foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+            foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
                 if (feed->getTitle() == ui->feedTreeWidget->currentItem()->text(0)) {
                     foreach (Entry* entry, feed->getEntriesList()) {
 
@@ -1331,10 +1331,10 @@ void GooDer::showEntriesOnSelectedFeed(QModelIndex index) {
     if (ui->feedTreeWidget->topLevelItemCount() <= 0)
         return;
 
-    //pokud je zvolena polozka Vsechny zdroje
+    // if All feeds entry is selected
     if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(0)->text(0)) {
         //vlozim do ni vsechny odebirane zdroje
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             foreach (Entry* entry, feed->getEntriesList()) {
                 QTreeWidgetItem *newEntry = new QTreeWidgetItem;
                 //nastavim informace, o polozce
@@ -1353,8 +1353,10 @@ void GooDer::showEntriesOnSelectedFeed(QModelIndex index) {
             }
         }
     }
-    //po kliknuti na label
+    // label is selected
     else if (_googleReaderController->getUnreadCountInLabel(ui->feedTreeWidget->currentItem()->text(0)) != -1) {
+        QString label = ui->feedTreeWidget->currentItem()->text(0);
+
         for (int m = 0; m < ui->feedTreeWidget->topLevelItemCount(); m++) {
             if (ui->feedTreeWidget->currentItem()->text(0) == ui->feedTreeWidget->topLevelItem(m)->text(0)) {
                 _currentLabel = m;
@@ -1363,31 +1365,27 @@ void GooDer::showEntriesOnSelectedFeed(QModelIndex index) {
             }
             sum += ui->feedTreeWidget->topLevelItem(m)->childCount();
         }
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
-            QList<QString> labelList = feed->getLabel();
-            foreach (QString label, labelList) {
-                if (label == ui->feedTreeWidget->currentItem()->text(0)) {
-                    foreach (Entry* entry, feed->getEntriesList()) {
-                        QTreeWidgetItem *newEntry = new QTreeWidgetItem;
-                        newEntry->setText(0, entry->getTitle());
-                        newEntry->setText(1, feed->getTitle());
-                        newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
-                        newEntry->setText(3, entry->getAuthor());
 
-                        if (!entry->isRead()) {
-                            newEntry->setFont(0, _fontBold);
-                            newEntry->setFont(1, _fontBold);
-                            newEntry->setFont(2, _fontBold);
-                            newEntry->setFont(3, _fontBold);
-                        }
+        foreach (Feed* feed, _googleReaderController->getFeedsInLabelDB(label)) {
+            foreach (Entry* entry, feed->getEntriesList()) {
+                QTreeWidgetItem *newEntry = new QTreeWidgetItem;
+                newEntry->setText(0, entry->getTitle());
+                newEntry->setText(1, feed->getTitle());
+                newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
+                newEntry->setText(3, entry->getAuthor());
 
-                        ui->entriesTreeWidget->addTopLevelItem(newEntry);
-                    }
+                if (!entry->isRead()) {
+                    newEntry->setFont(0, _fontBold);
+                    newEntry->setFont(1, _fontBold);
+                    newEntry->setFont(2, _fontBold);
+                    newEntry->setFont(3, _fontBold);
                 }
+
+                ui->entriesTreeWidget->addTopLevelItem(newEntry);
             }
         }
     }
-    //po kliknuti na zdroj
+    // feed is selected
     else {
         for (int m = 0; m < ui->feedTreeWidget->topLevelItemCount(); m++) {
             if (ui->feedTreeWidget->currentItem()->parent()->text(0) == ui->feedTreeWidget->topLevelItem(m)->text(0)) {
@@ -1401,7 +1399,31 @@ void GooDer::showEntriesOnSelectedFeed(QModelIndex index) {
             }
             sum += ui->feedTreeWidget->topLevelItem(m)->childCount();
         }
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+
+        QString feedId = ui->feedTreeWidget->currentItem()->text(2);
+        QString feed = _googleReaderController->getFeedDB(feedId);
+
+        foreach (Entry* entry, feed->getEntriesList()) {
+            QTreeWidgetItem *newEntry = new QTreeWidgetItem;
+
+            newEntry->setText(0, entry->getTitle());
+            newEntry->setText(1, feed->getTitle());
+            newEntry->setData(2, Qt::DisplayRole, entry->getPublishedDate());
+            newEntry->setText(3, entry->getAuthor());
+            newEntry->setText(4, entry->getId());
+
+            if (!entry->isRead()) {
+                newEntry->setFont(0, _fontBold);
+                newEntry->setFont(1, _fontBold);
+                newEntry->setFont(2, _fontBold);
+                newEntry->setFont(3, _fontBold);
+            }
+
+            ui->entriesTreeWidget->addTopLevelItem(newEntry);
+        }
+
+        /*
+        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             if (feed->getTitle() == ui->feedTreeWidget->currentItem()->text(0)) {
                 if (feed->getEntriesList().count() == 0) {
                     _lastEntriesCount = ui->entriesTreeWidget->topLevelItemCount();
@@ -1430,6 +1452,7 @@ void GooDer::showEntriesOnSelectedFeed(QModelIndex index) {
                 break;
             }
         }
+        */
     }
 
     ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(-1));
@@ -1534,7 +1557,7 @@ void GooDer::showAddFeedDialog() {
     labelList.append(trUtf8("Add new label"));
 
     //ziskam seznam aktualne pouzivanych stitku
-    foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+    foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
         QList<QString> tmpLabelList = feed->getLabel();
         foreach (QString label, tmpLabelList) {
             if (label != "") {
@@ -1559,14 +1582,14 @@ void GooDer::removeFeed() {
 */
 void GooDer::removeFeed(int index) {
     if (ui->feedTreeWidget->topLevelItemCount() > 0)
-        _googleReaderController->removeFeed(_googleReaderController->getFeedsFromDatabase().at(index)->getId());
+        _googleReaderController->removeFeed(_googleReaderController->getFeedsDB().at(index)->getId());
 }
 
 /*!
 \brief Zobrazi dialog pro odebrani zdroje
 */
 void GooDer::showRemoveFeedDialog() {
-    _removeFeedDialogInstance = new RemoveFeedDialog(_googleReaderController->getFeedsFromDatabase(), this);
+    _removeFeedDialogInstance = new RemoveFeedDialog(_googleReaderController->getFeedsDB(), this);
     connect (_removeFeedDialogInstance,SIGNAL(removeFeedData(int)),
            this, SLOT(removeFeed(int)));
     _removeFeedDialogInstance->exec();
@@ -1614,7 +1637,7 @@ void GooDer::showNotification() {
     else title = "No new entries";
 
     if (totalUnreadCount > 0 && totalUnreadCount < 20) {
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             feedUnreadCount = feed->getUnreadCount();
             if (feedUnreadCount > 0)  {
                 message.append("\n(").append(QString::number(feedUnreadCount)).append(")    ").append(feed->getTitle().toUtf8()).append("\n\n");
@@ -1627,7 +1650,7 @@ void GooDer::showNotification() {
         }
     }
     else {
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             feedUnreadCount = feed->getUnreadCount();
             if (feedUnreadCount > 0) {
                 if (feedUnreadCount < 10) message.append("(").append((QString::number(feedUnreadCount)).append(")       ").append(feed->getTitle().toUtf8().append("\n")));
@@ -1663,12 +1686,12 @@ void GooDer::readNextEntry() {
             //pokud jsem na konci seznamu
             else {
                 //stahnu dalsich 5 plozek z databaze
-                for (int x = 0; x < _googleReaderController->getFeedsFromDatabase().count(); x++) {
-                    if (ui->feedTreeWidget->currentItem()->text(0) == _googleReaderController->getFeedsFromDatabase().at(x)->getTitle()) {
+                for (int x = 0; x < _googleReaderController->getFeedsDB().count(); x++) {
+                    if (ui->feedTreeWidget->currentItem()->text(0) == _googleReaderController->getFeedsDB().at(x)->getTitle()) {
                         _lastEntriesCount = ui->entriesTreeWidget->topLevelItemCount();
                         _fetchingEntriesFromHistory = true;
                         _fetchingEntriesFromHistoryActivated = true;
-                        _googleReaderController->getSpecifiedNumberOfEntriesFromFeed(_googleReaderController->getFeedsFromDatabase().at(x)->getId(), _googleReaderController->getFeedsFromDatabase().at(x)->entries.count()+5);
+                        _googleReaderController->getSpecifiedNumberOfEntriesFromFeed(_googleReaderController->getFeedsDB().at(x)->getId(), _googleReaderController->getFeedsDB().at(x)->entries.count()+5);
 //                        googleReaderController->getNumberOfEntriesFromFeed(googleReaderController->getFeedsFromDatabase().at(x)->getId(), googleReaderController->getFeedsFromDatabase().at(x)->entries.count()+5, true);
                     }
                 }
@@ -1917,7 +1940,7 @@ void GooDer::searchEntry() {
     ui->frameSearch->hide();
 
     //a projedeme seznam polozek a hledame vsechny polozky, ktere obsahuji hledanou frazi
-    foreach (Feed * feed, _googleReaderController->getFeedsFromDatabase()) {
+    foreach (Feed * feed, _googleReaderController->getFeedsDB()) {
         foreach (Entry* entry, feed->getEntriesList()) {
             if (entry->getTitle().contains(keyword, Qt::CaseInsensitive))
                 searchResult.append(entry);
@@ -1936,7 +1959,7 @@ void GooDer::searchEntry() {
         QTreeWidgetItem *newEntry = new QTreeWidgetItem;
         QString feedName = "";
 
-        foreach (Feed* feed, _googleReaderController->getFeedsFromDatabase()) {
+        foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             foreach (Entry* entry, feed->getEntriesList()) {
                 if (entrySearched->getId() == entry->getId()) {
                     feedName = feed->getTitle();
