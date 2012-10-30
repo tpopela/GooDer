@@ -42,8 +42,8 @@ int GoogleReaderController::getUnreadCountInLabel(QString label) {
 /*!
 \brief
 */
-int GoogleReaderController::getUnreadCountInFeed(QString feedName) {
-    return _database->getUnreadCountInFeed(feedName);
+int GoogleReaderController::getUnreadCountInFeed(QString feedId) {
+    return _database->getUnreadCountInFeed(feedId);
 }
 
 /*!

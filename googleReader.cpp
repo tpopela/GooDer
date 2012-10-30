@@ -414,7 +414,10 @@ void GoogleReader::parseMarkEntryAsRead(QNetworkReply* reply) {
 
     if (reply->readAll() != "OK") {
         qDebug() << "Error during marking entry as read";
+        reply->seek(0);
         qDebug() << reply->readAll();
+        refreshSID();
+        _timerRefreshSessionID->start();
         emit signalStatusMarkEntryAsRead(false);
         return;
     }

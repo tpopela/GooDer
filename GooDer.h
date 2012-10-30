@@ -158,6 +158,7 @@ class GooDer : public QMainWindow {
         QFont _fontNormal;
         QColor _labelColor;
         QColor _lineColor;
+        QColor _unreadColor;
 
         int _commandHistoryCounter;
         int _checkFeedTime;
@@ -186,8 +187,8 @@ class GooDer : public QMainWindow {
         void checkEntriesFeedsNumbers();
         void markLabelAsRead();
         void markFeedAsRead();
-        void markAllUIEntriesListAsRead();
-        void markAllUIFeedsListAsRead();
+        void markUIAllEntriesListAsRead();
+        void markUIAllFeedsListAsRead();
         void markAllAsRead();
         void saveSettings();
         void loadSettings();
