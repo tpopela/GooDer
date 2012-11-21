@@ -50,12 +50,13 @@ int GoogleReaderController::getUnreadCountInFeed(QString feedId) {
 \brief
 */
 void GoogleReaderController::markLabelAsRead(QString label) {
-
     QList<Feed*> feedsInLabel = _database->getFeedsInLabel(label);
 
     foreach (Feed* feed, feedsInLabel) {
-        _googleReader->markFeedAsRead(feed->getId());
-        _database->markFeedAsRead(feed->getId());
+        if (feed->getUnreadCount() > 0) {
+            _googleReader->markFeedAsRead(feed->getId());
+            _database->markFeedAsRead(feed->getId());
+        }
     }
 }
 
@@ -63,24 +64,22 @@ void GoogleReaderController::markLabelAsRead(QString label) {
 \brief
 */
 void GoogleReaderController::markFeedAsRead(QString feedId) {
-
-    _googleReader->markFeedAsRead(feedId);
-    _database->markFeedAsRead(feedId);
+    if (getFeedDB(feedId)->getUnreadCount() > 0) {
+        _googleReader->markFeedAsRead(feedId);
+        _database->markFeedAsRead(feedId);
+    }
 }
 
 /*!
 \brief
 */
 void GoogleReaderController::markEntryAsRead(QString entryId) {
-
     _googleReader->markEntryAsRead(entryId);
     _database->markEntryAsRead(entryId);
 }
 
-void GoogleReaderController::markAllAsRead()
-{
-    foreach (Feed* feed, _database->getDatabase())
-    {
+void GoogleReaderController::markAllAsRead() {
+    foreach (Feed* feed, _database->getDatabase()) {
         if (feed->getUnreadCount() > 0)
             this->markFeedAsRead(feed->getId());
     }

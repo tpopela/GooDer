@@ -433,7 +433,7 @@ void Database::addEntries(QByteArray source) {
                 else if (sourceReader.name() == "title") {
                     attributes = sourceReader.attributes();
                     sourceReader.readNext();
-                    title =  sourceReader.text().toString();
+                    title = sourceReader.text().toString();
                 }
                 //pokud jsem na tagu, ktery obsahuje datum a cas publikovani
                 else if (sourceReader.name() == "published")

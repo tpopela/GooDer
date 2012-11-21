@@ -422,6 +422,7 @@ void GooDer::parseCommands() {
     else if (command == "mi" || command == "minimize") this->showMinimized();
     //pokud chceme oznacit polozky jako prectene
     else if (command == "m" || command == "mark") this->markAsRead();
+    else if (command == "m all" || command == "mark all") this->markAllAsRead();
     //pokud chceme prejit na dalsi polozku
     else if (command == "n" || command == "next") emit signalReadNextEntry();
     //pokud chceme prejit na nasledujici zdroj
@@ -1099,10 +1100,20 @@ void GooDer::markAsRead() {
         markAllAsRead();
     else if (ui->feedTreeWidget->currentItem()->text(2) == "allfeeds")
         markAllAsRead();
-    else if (ui->feedTreeWidget->currentItem()->text(2) == "label")
-        markLabelAsRead();
-    else
-        markFeedAsRead();
+    else if (ui->feedTreeWidget->currentItem()->text(2) == "label") {
+        QString feedName = ui->feedTreeWidget->currentItem()->text(0);
+        if (_googleReaderController->getUnreadCountInLabel(feedName) > 0)
+            markLabelAsRead();
+        else
+            return;
+    }
+    else {
+        QString feedId = ui->feedTreeWidget->currentItem()->text(2);
+        if (_googleReaderController->getUnreadCountInFeed(feedId) > 0)
+            markFeedAsRead();
+        else
+            return;
+    }
 
     if (_googleReaderController->getTotalUnreadCount() == 0)
         setIcon();
@@ -1777,7 +1788,6 @@ void GooDer::readPreviousLabel() {
         while (labelItem->text(2) != "label" && labelItem->text(2) != "allfeeds")
         {
             labelItem = ui->feedTreeWidget->itemAbove(labelItem);
-            QString aaa = labelItem->text(2);
 
             if (ui->feedTreeWidget->itemAbove(labelItem) == NULL) {
                 if (labelItem->text(2) != "allfeeds" &&

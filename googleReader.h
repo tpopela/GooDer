@@ -38,6 +38,7 @@ class GoogleReader : public QObject {
         QString _password;
         QString _sessionID;
         QString _googleToken;
+        bool _refreshingSID;
 
         void setCookie();
         void makeLogin();
