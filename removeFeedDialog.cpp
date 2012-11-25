@@ -7,9 +7,8 @@ RemoveFeedDialog::RemoveFeedDialog(QList<Feed*> feedList, QWidget* parent) : QDi
 {
     ui.setupUi(this);
 
-    for (int i = 0; i < feedList.count(); i++) {
+    for (int i = 0; i < feedList.count(); i++)
         ui.feedListWidget->addItem(feedList.at(i)->getTitle());
-    }
 
     connect(ui.buttonBox, SIGNAL(accepted()),
             this, SLOT(getFeedId()));
@@ -25,4 +24,3 @@ void RemoveFeedDialog::getFeedId() {
     emit removeFeedData(ui.feedListWidget->currentIndex().row());
     this->accept();
 }
-

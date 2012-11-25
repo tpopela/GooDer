@@ -55,6 +55,9 @@ void GooDer::changeEvent(QEvent *e)
                 ui->browser->reload();
             }
             break;
+        case QEvent::Resize:
+            setEntriesWidget();
+            break;
         default:
             break;
     }
@@ -105,19 +108,9 @@ void GooDer::initialize() {
     //a pro hledani
     ui->frameSearch->hide();
     //nastavime pocet sloupcu v panelech se zdroji a polozkami
-    ui->feedTreeWidget->setColumnCount(2);
-    ui->feedTreeWidget->setRootIsDecorated(false);
-    ui->entriesTreeWidget->setColumnCount(4);
-    ui->entriesTreeWidget->setColumnWidth(4,0);
     ui->entriesTreeWidget->sortByColumn(2);
-    //nastavime skryvani dlouhych slov
-    ui->feedTreeWidget->setWordWrap(true);
     //nastavime jmena sloupcu v panelu s polozkami
-    ui->entriesTreeWidget->headerItem()->setText(0, trUtf8("Entry name"));
-    ui->entriesTreeWidget->headerItem()->setText(1, trUtf8("Feed"));
-    ui->entriesTreeWidget->headerItem()->setText(2, trUtf8("Date"));
-    ui->entriesTreeWidget->headerItem()->setText(3, trUtf8("Author"));
-    ui->entriesTreeWidget->header()->show();
+    setEntriesWidget();
 
     //vytvorime kontextove menu v seznamu zdroju
     createFeedsContextMenu();
@@ -202,9 +195,8 @@ void GooDer::loadSettings() {
         _showLabels = _settings->value("showLabels", true).toBool();
 
         QString history = _settings->value("commandHistory").toString();
-        foreach (QString command, history.split(";", QString::SkipEmptyParts)) {
+        foreach (QString command, history.split(";", QString::SkipEmptyParts))
             _commandHistory.append(command);
-        }
 
         (_settings->value("toolbar", true).toBool()) ? ui->toolBar->show() : ui->toolBar->hide();
         (_settings->value("menuVisibility", true).toBool()) ? ui->menubar->show() : ui->menubar->hide();
@@ -232,7 +224,6 @@ void GooDer::saveSettings() {
     _settings->setValue("flash", _flashEnabled);
     _settings->setValue("showSummary", _showSummary);
     _settings->setValue("showAllFeeds", _showAllFeeds);
-    _settings->setValue("shortcutToggleFeedPanel", _shortcutToggleFeedPanel);
     _settings->setValue("showLabels", _showLabels);
     _settings->setValue("shortcutNextEntry", _shortcutNextEntry);
     _settings->setValue("shortcutPrevEntry", _shortcutPrevEntry);
@@ -240,11 +231,12 @@ void GooDer::saveSettings() {
     _settings->setValue("shortcutPrevFeed", _shortcutPrevFeed);
     _settings->setValue("shortcutNextLabel", _shortcutNextLabel);
     _settings->setValue("shortcutPrevLabel", _shortcutPrevLabel);
+    _settings->setValue("shortcutToggleFeedPanel", _shortcutToggleFeedPanel);
 
     QString history = "";
-    foreach (QString command, _commandHistory) {
+    foreach (QString command, _commandHistory)
         history += command + ";";
-    }
+
     _settings->setValue("commandHistory", history);
 }
 
@@ -256,9 +248,8 @@ void GooDer::loginSuccessfull(bool status) {
         qDebug() << "Login was successfull -> checking feeds";
         emit checkFeeds();
     }
-    else {
+    else
         qDebug() << "Login was unsuccessfull";
-    }
 }
 
 /*!
@@ -288,9 +279,9 @@ bool GooDer::eventFilter(QObject* obj, QEvent *event)
             else if(keyEvent->key() == Qt::Key_Down) {
                 if (!_commandHistory.isEmpty() && _commandHistoryCounter != -1) {
                     _commandHistoryCounter--;
-                    if (_commandHistoryCounter != -1) {
+                    if (_commandHistoryCounter != -1)
                         _commandsLine->setText(_commandHistory.at(_commandHistoryCounter));
-                    }
+
                     return true;
                 }
                 else {
@@ -298,10 +289,8 @@ bool GooDer::eventFilter(QObject* obj, QEvent *event)
                     return true;
                 }
             }
-            else if (keyEvent->key() == Qt::Key_Escape) {
-
+            else if (keyEvent->key() == Qt::Key_Escape)
                 ui->feedTreeWidget->setFocus();
-            }
         }
         return false;
     }
@@ -399,18 +388,17 @@ void GooDer::parseCommands() {
     else if (command.left(9) == "add label") { emit signalAddLabel(command.mid(10)); return; }
     else if (command.left(2) == "a " && command.length() > 1) {
         QStringList feedData = command.split(" ");
-        if (feedData.count() == 4) {
+        if (feedData.count() == 4)
             emit signalAddFeed(feedData.at(1), feedData.at(2), feedData.at(3));
-        }
-        else showStatusBarMessage("Enter all required informations!");
+        else
+            showStatusBarMessage("Enter all required informations!");
 
     }
     //pokud chci odebrat zdroj
     else if (command == "rm" || command == "remove") emit signalShowRemoveFeedDialog();
     else if ((command == "remove this" || command == "rm this") && command.length() >= 7 ) {
-        if (ui->feedTreeWidget->topLevelItemCount() > 0) {
+        if (ui->feedTreeWidget->topLevelItemCount() > 0)
             _googleReaderController->removeFeed(ui->feedTreeWidget->currentItem()->text(2));
-        }
     }
     //pokud chceme odebrat stitek
     else if (command == "rm label" || command == "remove label") emit signalRemoveLabel();
@@ -442,34 +430,27 @@ void GooDer::parseCommands() {
     //pokud chci nastavit nejakou polozku
     else if (command.left(3) == "set") {
         //pokud chceme nastavit cas automaticke aktualizace zdroju
-        if (command.mid(4,4) == "time") {
+        if (command.mid(4,4) == "time")
             _checkFeedTime = command.mid(9).toInt();
-        }
         //pokud chceme nastavit viditelnost listy nastroju
         else if (command.mid(4,7) == "toolbar") {
-            if (command.right(2) == "on") {
+            if (command.right(2) == "on")
                 ui->toolBar->show();
-            }
-            if (command.right(3) == "off") {
+            if (command.right(3) == "off")
                 ui->toolBar->hide();
-            }
         }
         //pokud chceme nastavit viditelnost menu
         else if (command.mid(4,4) == "menu") {
-            if (command.right(2) == "on") {
+            if (command.right(2) == "on")
                 ui->menubar->show();
-            }
-            if (command.right(3) == "off") {
+            if (command.right(3) == "off")
                 ui->menubar->hide();
-            }
         }
         else if (command.mid(4,7) == "summary") {
-            if (command.right(2) == "on") {
+            if (command.right(2) == "on")
                 _showSummary = true;
-            }
-            if (command.right(3) == "off") {
+            if (command.right(3) == "off")
                 _showSummary = false;
-            }
         }
         else if (command.mid(4,5) == "flash") {
             if (command.right(2) == "on") {
@@ -478,7 +459,7 @@ void GooDer::parseCommands() {
                 _flashEnabled = true;
                 this->setStatusBarMessage("Flash is enabled");
             }
-            else {
+            if (command.right(3) == "off") {
                 this->setFlash(false);
                 ui->browser->reload();
                 _flashEnabled = false;
@@ -490,25 +471,24 @@ void GooDer::parseCommands() {
                 _showAllFeeds = true;
                 ui->feedTreeWidget->topLevelItem(0)->setHidden(false);
             }
-            else {
+            if (command.right(3) == "off") {
                 _showAllFeeds = false;
                 ui->feedTreeWidget->topLevelItem(0)->setHidden(true);
             }
         }
         else if (command.mid(4,11) == "show labels") {
-            if (command.right(2) == "on") {
+            if (command.right(2) == "on")
                 _showLabels = true;
-            }
-            else {
+            if (command.right(3) == "off")
                 _showLabels = false;
-            }
+
             toggleLabelsVisibility(_showLabels);
         }
         //pokud chceme nastavit automaticke skryvani panelu se zdroji
         else if (command.mid(4,8) == "autohide") {
-            if (command.right(2) == "on") {
+            if (command.right(2) == "on")
                 _autoHideFeedPanel = true;
-            }
+
             if (command.right(3) == "off") {
                 _autoHideFeedPanel = false;
                 ui->frameShowFeedListButton->hide();
@@ -522,32 +502,25 @@ void GooDer::parseCommands() {
         saveSettings();
     }
     else if (command.left(4) == "info") {
-        if (command.mid(5,4) == "time") {
+        if (command.mid(5,4) == "time")
             _commandsLine->setText(command.mid(5,4) + " " + QString::number(_checkFeedTime/60000));
-        }
         else if (command.mid(5,7) == "toolbar") {
-            if (ui->toolBar->isHidden()) {
+            if (ui->toolBar->isHidden())
                 _commandsLine->setText(command.mid(5,7) + " " + "off");
-            }
-            else {
+            else
                 _commandsLine->setText(command.mid(5,7) + " " + "on");
-            }
         }
         else if (command.mid(5,4) == "menu") {
-            if (ui->menubar->isHidden()) {
+            if (ui->menubar->isHidden())
                 _commandsLine->setText(command.mid(5,4) + " " + "off");
-            }
-            else {
+            else
                 _commandsLine->setText(command.mid(5,4) + " " + "on");
-            }
         }
         else if (command.mid(5,5) == "flash") {
-            if (_flashEnabled) {
+            if (_flashEnabled)
                 _commandsLine->setText(command.mid(5,5) + " " + "on");
-            }
-            else {
+            else
                 _commandsLine->setText(command.mid(5,5) + " " + "off");
-            }
         }
         else if (command.mid(5,8) == "password") {
             _commandsLine->setText(_settings->value("password").toString());
@@ -556,23 +529,19 @@ void GooDer::parseCommands() {
             _commandsLine->setText(_settings->value("username").toString());
         }
         else if (command.mid(5,8) == "autohide") {
-            if (_autoHideFeedPanel) {
+            if (_autoHideFeedPanel)
                 _commandsLine->setText(command.mid(5,8) + " " + "on");
-            }
-            else {
+            else
                 _commandsLine->setText(command.mid(5,8) + " " + "off");
-            }
         }
-        else {
+        else
             showStatusBarMessage("Unknown command: " + command);
-        }
     }
-    else if (command == "") {
+    else if (command == "")
         ui->entriesTreeWidget->setFocus();
-    }
-    else {
+    else
         showStatusBarMessage("Unknown command: " + command);
-    }
+
     ui->entriesTreeWidget->setFocus();
     command.clear();
 }
@@ -594,9 +563,8 @@ void GooDer::callCheckFeeds() {
 
     qDebug() << "fetching feeds" << "in GooDer::callCheckFeeds";
 
-    if (_googleReaderController->getFeedsDB().isEmpty()) {
+    if (_googleReaderController->getFeedsDB().isEmpty())
         _googleReaderController->getFeeds();
-    }
     else {
         _googleReaderController->getUnreadFeeds();
         _timerRefreshFeeds->start();
@@ -607,31 +575,17 @@ void GooDer::callCheckFeeds() {
 \brief Porovna dve ruzna data publikovani
 */
 bool isLess(Entry* entry1, Entry* entry2) {
-
-    if (entry1->getPublishedDate() <= entry2->getPublishedDate()) return false;
-    else return true;
-
+    return (entry1->getPublishedDate() <= entry2->getPublishedDate()) ? false : true;
 }
 
 void GooDer::setEntriesWidget() {
 
-    checkEntriesFeedsNumbers();
+    int width = this->width();
 
-    int width = ui->entriesTreeWidget->header()->width();
-
-    ui->entriesTreeWidget->header()->setResizeMode(0,QHeaderView::Interactive);
-    ui->entriesTreeWidget->header()->setResizeMode(1,QHeaderView::Interactive);
-    ui->entriesTreeWidget->header()->setResizeMode(2,QHeaderView::Interactive);
-    ui->entriesTreeWidget->header()->setResizeMode(3,QHeaderView::Interactive);
-
-    ui->entriesTreeWidget->setWordWrap(true);
-
-    ui->entriesTreeWidget->setColumnWidth(0, width/3);
-    int newWidth = width - width/3;
-
-    ui->entriesTreeWidget->setColumnWidth(1,newWidth/3);
-    ui->entriesTreeWidget->setColumnWidth(2,newWidth/3);
-    ui->entriesTreeWidget->setColumnWidth(3,newWidth/3);
+    ui->entriesTreeWidget->setColumnWidth(0, width/1.8);
+    ui->entriesTreeWidget->setColumnWidth(1, width/4);
+    ui->entriesTreeWidget->setColumnWidth(2, width/4);
+    ui->entriesTreeWidget->setColumnWidth(3, width/4);
 }
 
 void GooDer::s_refreshAfterFeedDeleted() {
@@ -669,37 +623,47 @@ void GooDer::refreshFeedWidget() {
         newItem->setText(2, feed->getId());
         treeWidgetItem->addChild(newItem);
 
-        //pridani noveho prvku s nazvem stitku
-        if (!feed->getLabel().isEmpty()) {
-            //seznam vsech stitku prirazenych zdroji
-            QList<QString> labelList = feed->getLabel();
-            //prochazim jej
-            foreach (QString label, labelList) {
-                if (!label.isEmpty()) {
-                    //a pokousim se najit zda je jiz v levem sloupci se zdroji uveden
-                    QList<QTreeWidgetItem*> itemsFound = ui->feedTreeWidget->findItems(label, Qt::MatchExactly, 0);
-                    if (itemsFound.isEmpty()) {
-                        QTreeWidgetItem* labelItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(label));
-                        labelItem->setText(2, "label");
-                        ui->feedTreeWidget->addTopLevelItem(labelItem);
-                    }
-                    QList<QTreeWidgetItem*> labels = ui->feedTreeWidget->findItems(label, Qt::MatchExactly, 0);
-
-                    for (int i = 0; i < labels.at(0)->childCount(); i++) {
-                        if (labels.at(0)->child(i)->text(0) == feed->getTitle()) {
-                            notFound = false;
-                        }
-                    }
-                    if (notFound) {
-                        newItem = new QTreeWidgetItem;
-                        newItem->setText(0, feed->getTitle());
-                        newItem->setText(2, feed->getId());
-                        labels.at(0)->addChild(newItem);
-                    }
-                    notFound = true;
-               }
-            }
+        if (feed->getLabel().isEmpty()) {
+            _feedAdded = false;
+            continue;
         }
+
+        //seznam vsech stitku prirazenych zdroji
+        QList<QString> labelList = feed->getLabel();
+
+        foreach (QString label, labelList) {
+
+            if (label.isEmpty())
+                continue;
+
+            //a pokousim se najit zda je jiz v levem sloupci se zdroji uveden
+            QList<QTreeWidgetItem*> itemsFound = ui->feedTreeWidget->findItems(label, Qt::MatchExactly, 0);
+
+            if (itemsFound.isEmpty()) {
+                QTreeWidgetItem* labelItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(label));
+                labelItem->setText(2, "label");
+                ui->feedTreeWidget->addTopLevelItem(labelItem);
+            }
+
+            QList<QTreeWidgetItem*> labels = ui->feedTreeWidget->findItems(label, Qt::MatchExactly, 0);
+
+            for (int i = 0; i < labels.at(0)->childCount(); i++) {
+                if (labels.at(0)->child(i)->text(0) == feed->getTitle()) {
+                    notFound = false;
+                    break;
+                }
+            }
+
+            if (notFound) {
+                newItem = new QTreeWidgetItem;
+                newItem->setText(0, feed->getTitle());
+                newItem->setText(2, feed->getId());
+                labels.at(0)->addChild(newItem);
+            }
+
+            notFound = true;
+        }
+
         _feedAdded = false;
     }
 
@@ -724,8 +688,7 @@ void GooDer::refreshFeedWidget() {
 */
 void GooDer::getEntriesReady() {
 
-    if (_fetchingEntriesFromHistory)
-    {
+    if (_fetchingEntriesFromHistory) {
         getEntriesFromFeed(_fetchingEntriesFromHistoryActivated);
         return;
     }
@@ -734,18 +697,15 @@ void GooDer::getEntriesReady() {
 
     ui->statusbar->clearMessage();
 
-    if (_firstRun || _feedAdded) {
+    if (_firstRun || _feedAdded)
         refreshFeedWidget();
-    }
 
     if (!_firstRun) {
 /////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         checkEntriesFeedsNumbers();
 
-        if (ui->feedTreeWidget->currentItem() == NULL) {
+        if (ui->feedTreeWidget->currentItem() == NULL)
             return;
-
-        }
         else {
             QString feedId = ui->feedTreeWidget->currentItem()->text(2);
 
@@ -765,7 +725,8 @@ void GooDer::getEntriesReady() {
         foreach (Feed* feed, _googleReaderController->getFeedsDB())
             addFeedEntriesToEntriesList(feed);
 
-        if (!_showAllFeeds) ui->feedTreeWidget->topLevelItem(0)->setHidden(true);
+        if (!_showAllFeeds)
+            ui->feedTreeWidget->topLevelItem(0)->setHidden(true);
 
         differentiateEntriesLines();
 
@@ -778,7 +739,7 @@ void GooDer::getEntriesReady() {
 */
 void GooDer::showCommandLine() {
 
-    this->_commandsLine->setFocus();
+    _commandsLine->setFocus();
     _commandsLine->setText(":");
 
     connect(_commandsLine, SIGNAL(returnPressed()),
@@ -849,7 +810,6 @@ void GooDer::createTray() {
     QAction* trayMarkAllAsRead = new QAction(trUtf8("Mark all as read"), this);
     connect(trayMarkAllAsRead, SIGNAL(triggered()),
             this, SLOT(trayMarkAllAsRead()));
-
     _trayMenu->addAction(trayMarkAllAsRead);
 
     _trayMenu->addSeparator();
@@ -868,7 +828,7 @@ void GooDer::createTray() {
 \brief Zobrazi dialog O aplikaci
 */
 void GooDer::showAbout() {
-    QMessageBox::information(0, trUtf8("About GooDer"), trUtf8("Based on my bachelors thesis. Author: Tomáš Popela, tomas.popela@gmail.com"));
+    QMessageBox::information(0, trUtf8("About GooDer"), trUtf8("Based on my bachelors thesis. Author: Tomas Popela, tomas.popela@gmail.com"));
 }
 
 /*!
@@ -1124,7 +1084,6 @@ void GooDer::markAsRead() {
 */
 void GooDer::checkEntriesFeedsNumbers() {
 
-
     //prochazim seznam polozek a zdroju
     for (int i = 0; i < ui->feedTreeWidget->topLevelItemCount(); i++) {
         for (int j  = 0; j < ui->feedTreeWidget->topLevelItem(i)->childCount(); j++) {
@@ -1136,9 +1095,8 @@ void GooDer::checkEntriesFeedsNumbers() {
                 //oznacim zdroj jako neprecteny
                 markUIFeedAsUnread(i,j,unreadCount);
             }
-            else {
+            else
                 markUIFeedAsRead(i,j);
-            }
         }
     }
 
@@ -1241,9 +1199,9 @@ void GooDer::getEntriesFromFeed(bool moveToNextEntry) {
     //predchozi obsah vymazu (pokud bych toto neudelal, nove polozky by se pridavali za aktualni
     ui->entriesTreeWidget->clear();
 
-    //do panelu s polozkami vypisu vsechny polozky ze zdroje i s nove ziskanymi
-    foreach (Feed* feed, _googleReaderController->getFeedsDB())
-        addFeedEntriesToEntriesList(feed);
+    QString currentFeedId = ui->feedTreeWidget->currentItem()->text(2);
+    Feed* feed = _googleReaderController->getFeedDB(currentFeedId);
+    addFeedEntriesToEntriesList(feed);
 
     differentiateEntriesLines();
 
@@ -1255,18 +1213,15 @@ void GooDer::getEntriesFromFeed(bool moveToNextEntry) {
             ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(currentIndex - 5));
             emit signalReadNextEntry(ui->entriesTreeWidget->currentIndex());
         }
-        else {
+        else
             ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(currentIndex - 1));
-        }
     }
     //pokud mam zustat na aktualni polozce
     else {
-        if (_lastEntriesCount != ui->entriesTreeWidget->topLevelItemCount()) {
+        if (_lastEntriesCount != ui->entriesTreeWidget->topLevelItemCount())
             ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(currentIndex - 6));
-        }
-        else {
+        else
             ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(currentIndex - 1));
-        }
     }
 }
 
@@ -1292,9 +1247,8 @@ void GooDer::setFeedListWidth() {
         feedListWidth = 185 + numberWidth + qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent) + 60;
         ui->feedTreeWidget->setColumnWidth(0, 250);
     }
-    else {
+    else
         feedListWidth = fontWidth + numberWidth + qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent) + 60;
-    }
 
     ui->feedTreeWidget->setFixedWidth(feedListWidth - 20);
 }
@@ -1375,9 +1329,8 @@ void GooDer::openEntryInExternalBrowser() {
         checkEntriesFeedsNumbers();
         markUIEntryAsRead();
     }
-    else {
+    else
         showStatusBarMessage("Can't open entry in external browser!");
-    }
 }
 
 /*!
@@ -1464,6 +1417,7 @@ void GooDer::showAddFeedDialog() {
             }
         }
     }
+
     _addFeedDialogInstance = new AddFeedDialog(labelList, this);
     connect (_addFeedDialogInstance,SIGNAL(dataReady(QString, QString, QString)),
             this, SLOT(addNewFeed(QString, QString, QString)));
@@ -1507,10 +1461,8 @@ void GooDer::showFeedTreeWidget() {
 \brief Minimalizuje/maximalizuje okno pri poklikani na ikonu v systemove liste
 */
 void GooDer::trayActivated(QSystemTrayIcon::ActivationReason reason) {
-    if (reason == QSystemTrayIcon::DoubleClick) {
-        if (isMinimized()) this->showMaximized();
-        else this->showMinimized();
-    }
+    if (reason == QSystemTrayIcon::DoubleClick)
+        (isMinimized()) ? this->showMaximized() : this->showMinimized();
 }
 
 /*!
@@ -1529,41 +1481,52 @@ void GooDer::showNotification() {
         return;
 
     //tvar zpravy podle poctu polozek
-    if (totalUnreadCount == 1) title = QString("%1 new item").arg(totalUnreadCount);
-    else if (totalUnreadCount >= 2 && totalUnreadCount <= 4) title= QString("%1 new items").arg(totalUnreadCount);
-    else if (totalUnreadCount > 4) title = QString("%1 new items").arg(totalUnreadCount);
-    else title = "No new entries";
+    if (totalUnreadCount == 1)
+        title = QString("%1 new item").arg(totalUnreadCount);
+    else if (totalUnreadCount >= 2 && totalUnreadCount <= 4)
+        title= QString("%1 new items").arg(totalUnreadCount);
+    else if (totalUnreadCount > 4)
+        title = QString("%1 new items").arg(totalUnreadCount);
+    else
+        title = "No new entries";
 
     if (totalUnreadCount > 0 && totalUnreadCount < 20) {
         foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             feedUnreadCount = feed->getUnreadCount();
-            if (feedUnreadCount > 0)  {
-                message.append("\n(").append(QString::number(feedUnreadCount)).append(")    ").append(feed->getTitle().toUtf8()).append("\n\n");
-                foreach (Entry* entry, feed->getEntriesList()) {
-                    if (!entry->isRead()) {
-                        message.append(entry->getTitle().toUtf8()).append("\n");
-                    }
-                }
+            if (feedUnreadCount <= 0)
+                continue;
+
+            message.append("\n(").append(QString::number(feedUnreadCount)).append(")    ").append(feed->getTitle().toUtf8()).append("\n\n");
+            foreach (Entry* entry, feed->getEntriesList()) {
+                if (!entry->isRead())
+                    message.append(entry->getTitle().toUtf8()).append("\n");
             }
         }
     }
     else {
         foreach (Feed* feed, _googleReaderController->getFeedsDB()) {
             feedUnreadCount = feed->getUnreadCount();
-            if (feedUnreadCount > 0) {
-                if (feedUnreadCount < 10) message.append("(").append((QString::number(feedUnreadCount)).append(")       ").append(feed->getTitle().toUtf8().append("\n")));
-                else if (feedUnreadCount < 100) message.append("(").append((QString::number(feedUnreadCount)).append(")     ").append(feed->getTitle().toUtf8().append("\n")));
-                else if (feedUnreadCount < 1000) message.append("(").append((QString::number(feedUnreadCount)).append(")   ").append(feed->getTitle().toUtf8().append("\n")));
-                else message.append("(").append((QString::number(feedUnreadCount)).append(")  ").append(feed->getTitle().toUtf8().append("\n")));
+            if (feedUnreadCount <= 0)
+                continue;
 
-            }
+            QString align = "";
+
+            if (feedUnreadCount < 10)
+                align = ")      ";
+            else if (feedUnreadCount < 100)
+                align = ")    ";
+            else if (feedUnreadCount < 1000)
+                align = ")   ";
+            else
+                align = ")  ";
+
+            message.append("(").append((QString::number(feedUnreadCount)).append(align).append(feed->getTitle().toUtf8().append("\n")));
         }
     }
 
     _trayIcon->setIcon(iconNewEntry);
     GooDer::setWindowIcon(iconNewEntry);
 
-    //zobrazi "bublinovou" zpravu s obsahem
     _trayIcon->showMessage(trUtf8(title.toAscii()), trUtf8(message.toAscii()), QSystemTrayIcon::Information, 7000);
 }
 
@@ -1593,9 +1556,8 @@ void GooDer::readNextEntry() {
         Feed* feed = _googleReaderController->getFeedDB(feedId);
         _googleReaderController->getSpecifiedNumberOfEntriesFromFeed(feedId, feed->entries.count()+5);
     }
-    else {
+    else
         ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->itemBelow(currentItem));
-    }
 
     emit signalReadNextEntry(ui->entriesTreeWidget->currentIndex());
 }
@@ -1650,8 +1612,7 @@ void GooDer::readNextFeed() {
 
         // find next item that's not label
         // there can be 2 or more empty label in row
-        while (labelItem->text(2) == "label")
-        {
+        while (labelItem->text(2) == "label") {
             labelItem = ui->feedTreeWidget->itemBelow(labelItem);
 
             if (ui->feedTreeWidget->itemBelow(labelItem) == NULL)
@@ -1660,9 +1621,8 @@ void GooDer::readNextFeed() {
 
         ui->feedTreeWidget->setCurrentItem(labelItem);
     }
-    else {
+    else
         ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemBelow(currentItem));
-    }
 
     emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
 }
@@ -1696,8 +1656,7 @@ void GooDer::readPreviousFeed() {
 
         // find previous item that's not label
         // there can be 2 or more empty label in row
-        while (labelItem->text(2) == "label")
-        {
+        while (labelItem->text(2) == "label") {
             labelItem = ui->feedTreeWidget->itemAbove(labelItem);
 
             if (ui->feedTreeWidget->itemAbove(labelItem) == NULL)
@@ -1709,9 +1668,8 @@ void GooDer::readPreviousFeed() {
 
         ui->feedTreeWidget->setCurrentItem(labelItem);
     }
-    else {
+    else
         ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemAbove(currentItem));
-    }
 
     emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
 }
@@ -1743,8 +1701,7 @@ void GooDer::readNextLabel() {
         QTreeWidgetItem* labelItem = ui->feedTreeWidget->itemBelow(currentItem);
 
         // find next label
-        while (labelItem->text(2) != "label")
-        {
+        while (labelItem->text(2) != "label") {
             labelItem = ui->feedTreeWidget->itemBelow(labelItem);
 
             if (ui->feedTreeWidget->itemBelow(labelItem) == NULL)
@@ -1753,9 +1710,8 @@ void GooDer::readNextLabel() {
 
         ui->feedTreeWidget->setCurrentItem(labelItem);
     }
-    else {
+    else
         ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemBelow(currentItem));
-    }
 
     emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
 }
@@ -1785,8 +1741,7 @@ void GooDer::readPreviousLabel() {
         QTreeWidgetItem* labelItem = ui->feedTreeWidget->itemAbove(currentItem);
 
         // find previous label
-        while (labelItem->text(2) != "label" && labelItem->text(2) != "allfeeds")
-        {
+        while (labelItem->text(2) != "label" && labelItem->text(2) != "allfeeds") {
             labelItem = ui->feedTreeWidget->itemAbove(labelItem);
 
             if (ui->feedTreeWidget->itemAbove(labelItem) == NULL) {
@@ -1798,9 +1753,8 @@ void GooDer::readPreviousLabel() {
 
         ui->feedTreeWidget->setCurrentItem(labelItem);
     }
-    else {
+    else
         ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemAbove(currentItem));
-    }
 
     emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
 
@@ -1824,7 +1778,9 @@ void GooDer::showHideMenu() {
 \brief Skryje panel pro hledani a zadavani prikazu
 */
 void GooDer::hideSearchCommandBar() {
-    if (!ui->frameSearch->isHidden()) ui->frameSearch->hide();
+    if (!ui->frameSearch->isHidden())
+        ui->frameSearch->hide();
+
     ui->entriesTreeWidget->setFocus();
 }
 
@@ -1833,12 +1789,12 @@ void GooDer::hideSearchCommandBar() {
 */
 void GooDer::showHideFeedList() {
     if (ui->feedTreeWidget->isHidden()) {
-      ui->feedTreeWidget->show();
-      ui->frameShowFeedListButton->hide();
+        ui->feedTreeWidget->show();
+        ui->frameShowFeedListButton->hide();
     }
     else {
-      ui->feedTreeWidget->hide();
-//      ui->frameShowFeedListButton->show();
+        ui->feedTreeWidget->hide();
+        ui->frameShowFeedListButton->show();
     }
 }
 
@@ -1865,8 +1821,10 @@ void GooDer::searchEntry() {
     ui->entriesTreeWidget->clear();
 
     //ve statusbaru informujeme o poctu nalezenych polozek
-    if (searchResult.isEmpty()) showStatusBarMessage(QString("Nothing found for: ").append(keyword));
-    else showStatusBarMessage(QString("Entries found: ").append(QString::number(searchResult.count())));
+    if (searchResult.isEmpty())
+        showStatusBarMessage(QString("Nothing found for: ").append(keyword));
+    else
+        showStatusBarMessage(QString("Entries found: ").append(QString::number(searchResult.count())));
 
     //nalezene polozky vypiseme
     foreach (Entry* entrySearched, searchResult) {
@@ -1881,11 +1839,13 @@ void GooDer::searchEntry() {
                 }
             }
         }
+
         newItem->setText(0, entrySearched->getTitle());
         newItem->setText(1, feedName);
         newItem->setData(2, Qt::DisplayRole, entrySearched->getPublishedDate());
         newItem->setText(3, entrySearched->getAuthor());
         newItem->setText(4, entrySearched->getId());
+
         if (!entrySearched->isRead()) {
             newItem->setFont(0, _fontBold);
             newItem->setFont(1, _fontBold);
@@ -1935,7 +1895,7 @@ void GooDer::markUIFeedAsRead(int positionLabel, int positionFeed) {
 void GooDer::markUIFeedAsUnread(int positionLabel, int positionFeed, int numberOfNewEntries) {
 
     QTreeWidgetItem* feed = ui->feedTreeWidget->topLevelItem(positionLabel)->child(positionFeed);
-    //zdroj zvyraznim
+    //highligh the feed
     feed->setFont(0, _fontBold);
     feed->setFont(1, _fontBold);
     //set different background for unread feed

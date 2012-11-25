@@ -26,28 +26,20 @@ class Feed : public QObject {
         long getFirstItemTime() { return _firstItemMsec; }
 
         //nastavi stitek zdroje
-        void setLabel(QString p_label) { _labelList.append(p_label); }
-
-        void removeLabel(QString p_label) {
-            for (int i = 0; i < _labelList.count(); i++) {
-                if (p_label == _labelList.at(i)) {
-                    _labelList.removeAt(i);
-                }
-            }
-        }
+        void setLabel(QString label) { _labelList.append(label); }
 
         //nastavi nazev zdroje
-        void setTitle(QString p_title) { _title = p_title; }
+        void setTitle(QString title) { _title = title; }
         //nastavi stitek zdroje
-        void setNewestItemTimestamp(int p_newestItemTimestamp) { _newestItemTimestampUsec = p_newestItemTimestamp; }
+        void setNewestItemTimestamp(int newestItemTimestamp) { _newestItemTimestampUsec = newestItemTimestamp; }
         //nastavi pocet neprectenych polozek
-        void setUnreadCount(int p_count) { _unreadCount = p_count; }
+        void setUnreadCount(int count) { _unreadCount = count; }
         //znizi pocet neprectenych polozek
         void decrementUnreadCount() { if (_unreadCount > 0) _unreadCount--; }
 
-        QList<Entry*> getEntriesList() {
-            return entries;
-        }
+        void removeLabel(QString);
+
+        QList<Entry*> getEntriesList() { return entries; }
 
     private:
         QString _id;

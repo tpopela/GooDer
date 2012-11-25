@@ -31,22 +31,19 @@ void AddFeedDialog::done(int ready) {
         else {
             //odeslu udaje
             if (ui.labelName->isHidden()) {
-                if (ui.labelComboBox->currentIndex() == 0) {
+                if (ui.labelComboBox->currentIndex() == 0)
                     emit dataReady(ui.feedAddress->text(), ui.feedName->text(), "");
-                }
-                else {
+                else
                     emit dataReady(ui.feedAddress->text(), ui.feedName->text(), ui.labelComboBox->currentText());
-                }
             }
-            else {
+            else
                 emit dataReady(ui.feedAddress->text(), ui.feedName->text(), ui.labelName->text());
-            }
+
             QDialog::done(ready);
         }
     }
-    else {
+    else
         QDialog::done(ready);
-    }
 }
 
 /*!

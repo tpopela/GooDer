@@ -10,7 +10,7 @@ class LabelNameDialog : public QDialog
     Q_OBJECT
 
     public:
-        LabelNameDialog(QList<QString> p_labelList, QWidget* parent = 0);
+        LabelNameDialog(QList<QString> labelList, QWidget* parent = 0);
 
     private slots:
         void done(int);

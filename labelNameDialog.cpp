@@ -32,25 +32,20 @@ void LabelNameDialog::done(int ready) {
         else {
             //odeslu udaje
             if (ui.labelName->isHidden()) {
-                if (ui.labelComboBox->currentIndex() == 1) {
+                if (ui.labelComboBox->currentIndex() == 1)
                     emit signalLabelName(ui.labelName->text());
-                }
-                else if (ui.labelComboBox->currentIndex() == 0) {
+                else if (ui.labelComboBox->currentIndex() == 0)
                     emit signalLabelName("");
-                }
-                else {
+                else
                     emit signalLabelName(ui.labelComboBox->currentText());
-                }
             }
-            else {
+            else
                emit signalLabelName(ui.labelName->text());
-            }
         }
         QDialog::done(ready);
     }
-    else {
+    else
         QDialog::done(ready);
-    }
 }
 
 /*!

@@ -18,11 +18,16 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent) {
         ui.linePassword->setText(_crypt->decryptToString(_settings->value("password").toString()));
     ui.timeCheckFeeds->setValue(_settings->value("checkFeedTime", 300000).toInt()/60000);
 
-    if (_settings->value("toolbar", true).toBool()) ui.showToolbar->setChecked(true);
-    if (_settings->value("autoHideFeedPanel", true).toBool()) ui.autoHideFeedPanel->setChecked(true);
-    if (_settings->value("menuVisibility", true).toBool()) ui.showMenu->setChecked(true);
-    if (_settings->value("flash", true).toBool()) ui.flashOnOff->setChecked(true);
-    if (_settings->value("showSummary", true).toBool()) ui.showSummary->setChecked(true);
+    if (_settings->value("toolbar", true).toBool())
+        ui.showToolbar->setChecked(true);
+    if (_settings->value("autoHideFeedPanel", true).toBool())
+        ui.autoHideFeedPanel->setChecked(true);
+    if (_settings->value("menuVisibility", true).toBool())
+        ui.showMenu->setChecked(true);
+    if (_settings->value("flash", true).toBool())
+        ui.flashOnOff->setChecked(true);
+    if (_settings->value("showSummary", true).toBool())
+        ui.showSummary->setChecked(true);
 
     ui.shortNextEntry->setText(_settings->value("shortcutNextEntry", "Meta+.").toString());
     ui.shortPrevEntry->setText(_settings->value("shortcutPrevEntry", "Meta+,").toString());
@@ -82,9 +87,8 @@ void SettingsDialog::done(int ready) {
         }
     }
     else {
-        if (ui.lineUsername->text().isEmpty() || ui.linePassword->text().isEmpty() || ui.timeCheckFeeds->value() < 1) {
+        if (ui.lineUsername->text().isEmpty() || ui.linePassword->text().isEmpty() || ui.timeCheckFeeds->value() < 1)
             emit signalNoUserInfo();
-        }
         QDialog::done(ready);
     }
 }

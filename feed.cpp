@@ -30,3 +30,12 @@ Feed::Feed(QString id, QString title, QList<QString> label, QString firstItemMse
     _firstItemMsec = firstItemMsec.toLong();
     _unreadCount = 0;
 }
+
+void Feed::removeLabel(QString label) {
+    for (int i = 0; i < _labelList.count(); i++) {
+        if (label == _labelList.at(i)) {
+            _labelList.removeAt(i);
+            break;
+        }
+    }
+}

@@ -36,9 +36,11 @@ void myMessageHandler(QtMsgType type, const char *msg)
 */
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
-    qInstallMsgHandler(myMessageHandler);
+
+/*    qInstallMsgHandler(myMessageHandler);
     qDebug() << "";
     qDebug() << "Starting";
+*/
     GooDer GooDerInstance;
     GooDerInstance.showMaximized();
     GooDerInstance.initialize();
