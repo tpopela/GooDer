@@ -316,7 +316,6 @@ void GooDer::createFeedsContextMenu() {
 \brief Vytvori kontextove menu pro vytvoreni slozky
 */
 void GooDer::createEntriesContextMenu() {
-    _settings->setValue("shortcutToggleFeedPanel", _shortcutToggleFeedPanel);
     //v seznamu polozek
     ui->entriesTreeWidget->setContextMenuPolicy(Qt::ActionsContextMenu);
     _entryContextMenu = new QMenu(ui->entriesTreeWidget);
