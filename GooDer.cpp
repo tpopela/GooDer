@@ -47,12 +47,16 @@ void GooDer::changeEvent(QEvent *e)
         case QEvent::WindowStateChange:
             if (this->isMinimized()) {
                 this->hide();
-                this->setFlash(false);
-                ui->browser->reload();
+                if (_flashEnabled) {
+                    this->setFlash(false);
+                    ui->browser->reload();
+                }
             }
             else {
-                this->setFlash(false);
-                ui->browser->reload();
+                if (_flashEnabled) {
+                    this->setFlash(_flashEnabled);
+                    ui->browser->reload();
+                }
             }
             break;
         case QEvent::Resize:
