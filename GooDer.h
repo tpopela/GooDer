@@ -81,9 +81,9 @@ class GooDer : public QMainWindow {
         void showCreateNewLabelDialog();
         void createNewLabel(QString);
         void showCommandLine();
+        void showSearchLine();
         void parseCommands();
         void openEntryInExternalBrowser();
-        void showSearchLine();
         void readNextEntry();
         void readPreviousEntry();
         void readNextFeed();
@@ -93,9 +93,8 @@ class GooDer : public QMainWindow {
         void noUserInfo();
         void getEntriesFromFeed(bool moveToNextEntry);
         void showHideToolbar();
-        void hideSearchCommandBar();
         void showHideFeedList();
-        void searchEntry();
+        void searchEntry(QString);
         void onlineState(bool);
         void showHideMenu();
         void removeLabel();

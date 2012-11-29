@@ -37,7 +37,28 @@
     </size>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="1" rowspan="2">
+    <item row="1" column="2" colspan="2">
+     <widget class="QWebView" name="browser" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>510</width>
+        <height>400</height>
+       </size>
+      </property>
+      <property name="url" stdset="0">
+       <url>
+        <string/>
+       </url>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1" rowspan="2">
      <widget class="QTreeWidget" name="feedTreeWidget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
@@ -68,6 +89,9 @@
       </property>
       <property name="frameShadow">
        <enum>QFrame::Plain</enum>
+      </property>
+      <property name="lineWidth">
+       <number>0</number>
       </property>
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -114,7 +138,7 @@
       </column>
      </widget>
     </item>
-    <item row="1" column="0" rowspan="2">
+    <item row="0" column="0" rowspan="2">
      <widget class="QFrame" name="frameShowFeedListButton">
       <property name="minimumSize">
        <size>
@@ -149,28 +173,7 @@
       </widget>
      </widget>
     </item>
-    <item row="2" column="2" colspan="2">
-     <widget class="QWebView" name="browser" native="true">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>510</width>
-        <height>400</height>
-       </size>
-      </property>
-      <property name="url" stdset="0">
-       <url>
-        <string>file:///home/v3s</string>
-       </url>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
+    <item row="0" column="2">
      <widget class="QTreeWidget" name="entriesTreeWidget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -198,6 +201,9 @@
       </property>
       <property name="frameShadow">
        <enum>QFrame::Plain</enum>
+      </property>
+      <property name="lineWidth">
+       <number>0</number>
       </property>
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -240,60 +246,6 @@
         <string>Author</string>
        </property>
       </column>
-     </widget>
-    </item>
-    <item row="0" column="0" colspan="3">
-     <widget class="QFrame" name="frameSearch">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>24</height>
-       </size>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Plain</enum>
-      </property>
-      <property name="lineWidth">
-       <number>0</number>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QLabel" name="labelSearch">
-           <property name="text">
-            <string>Search:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="searchKeyWord">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>20</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
      </widget>
     </item>
    </layout>

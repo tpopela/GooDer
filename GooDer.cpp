@@ -59,9 +59,6 @@ void GooDer::changeEvent(QEvent *e)
                 }
             }
             break;
-        case QEvent::Resize:
-            setEntriesWidget();
-            break;
         default:
             break;
     }
@@ -109,8 +106,6 @@ void GooDer::initialize() {
     _trayIcon->show();
     //skryje listu s tlacitkem pro zobrazeni seznamu zdroju
     ui->frameShowFeedListButton->hide();
-    //a pro hledani
-    ui->frameSearch->hide();
     //nastavime pocet sloupcu v panelech se zdroji a polozkami
     ui->entriesTreeWidget->sortByColumn(2);
     //nastavime jmena sloupcu v panelu s polozkami
@@ -120,8 +115,6 @@ void GooDer::initialize() {
     createFeedsContextMenu();
     createEntriesContextMenu();
 
-    //napoji signaly
-    this->connectSignals();
 
     connect(_googleReaderController, SIGNAL(signalConnected(bool)),
             this, SLOT(onlineState(bool)));
@@ -134,6 +127,9 @@ void GooDer::initialize() {
     _unreadColor = QColor(248, 0, 18, 50);
 
     this->setStatusbarWidgets();
+
+    //napoji signaly
+    this->connectSignals();
 
     this->loadSettings();
 }
@@ -336,8 +332,7 @@ void GooDer::setShortcuts() {
     //po stisknuti ZZ nebo Ctrl + Q ukonci aplikaci
     new QShortcut(QKeySequence(Qt::SHIFT + Qt::Key_Z, Qt::SHIFT + Qt::Key_Z), this, SLOT(close()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q), this, SLOT(close()));
-    //po stisknuti CTRL + F nebo / se zobrazi pole pro vyhledavani
-    new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_F), this, SLOT(showSearchLine()));
+    //po stisknuti / se zobrazi pole pro vyhledavani
     new QShortcut(QKeySequence(Qt::Key_Slash), this, SLOT(showSearchLine()));
     //po stisknuti Escape se se pole skryje
     new QShortcut(QKeySequence(Qt::Key_Escape), this, SLOT(hideSearchCommandBar()));
@@ -376,6 +371,12 @@ void GooDer::parseCommands() {
 
     //ulozim si pozadavek
     QString command = _commandsLine->text().mid(1);
+
+    if (_commandsLine->text().left(1) == "/") {
+        searchEntry(command);
+        _commandsLine->clear();
+        return;
+    }
 
     //vlozim jej do historie
     _commandHistory.append(_commandsLine->text());
@@ -546,7 +547,6 @@ void GooDer::parseCommands() {
         showStatusBarMessage("Unknown command: " + command);
 
     ui->entriesTreeWidget->setFocus();
-    command.clear();
 }
 
 void GooDer::newFeedAdded() {
@@ -742,21 +742,17 @@ void GooDer::getEntriesReady() {
 */
 void GooDer::showCommandLine() {
 
-    _commandsLine->setFocus();
     _commandsLine->setText(":");
-
-    connect(_commandsLine, SIGNAL(returnPressed()),
-        this, SLOT(parseCommands()));
+    _commandsLine->setFocus();
 }
 
 /*!
-\brief Zobrazi radek pro hledani
+\brief Zobrazi pole pro vyhledavani
 */
 void GooDer::showSearchLine() {
-    if (ui->frameSearch->isHidden()) {
-        ui->frameSearch->show();
-        ui->searchKeyWord->setFocus();
-    }
+
+    _commandsLine->setText("/");
+    _commandsLine->setFocus();
 }
 
 /*!
@@ -876,9 +872,6 @@ void GooDer::connectSignalsUI() {
     //zobrazi polozku po jednom kliknuti (Mac, Win)
     connect(ui->entriesTreeWidget, SIGNAL(clicked(QModelIndex)),
             this, SLOT(showSelectedEntry(QModelIndex)));
-    //pokud je zadan pozadavek na vyhledavani
-    connect(ui->searchKeyWord, SIGNAL(returnPressed()),
-            this, SLOT(searchEntry()));
     connect(_trayIcon, SIGNAL(messageClicked()),
             this, SLOT(show()));
     connect(_trayIcon,SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
@@ -888,6 +881,8 @@ void GooDer::connectSignalsUI() {
 
     connect(ui->entriesTreeWidget->header(), SIGNAL(sectionClicked(int)),
             this, SLOT(changeSortingUIChanges(int)));
+    connect(_commandsLine, SIGNAL(returnPressed()),
+        this, SLOT(parseCommands()));
 }
 
 void GooDer::connectSignalsControl() {
@@ -1778,16 +1773,6 @@ void GooDer::showHideMenu() {
 }
 
 /*!
-\brief Skryje panel pro hledani a zadavani prikazu
-*/
-void GooDer::hideSearchCommandBar() {
-    if (!ui->frameSearch->isHidden())
-        ui->frameSearch->hide();
-
-    ui->entriesTreeWidget->setFocus();
-}
-
-/*!
 \brief Zobrazi/skryje seznam zdroju
 */
 void GooDer::showHideFeedList() {
@@ -1804,13 +1789,9 @@ void GooDer::showHideFeedList() {
 /*!
 \brief Hleda polozky podle zadaneho slova
 */
-void GooDer::searchEntry() {
+void GooDer::searchEntry(QString keyword) {
 
     QList<Entry*> searchResult;
-    //ulozime si vyhledavane slovo
-    QString keyword = ui->searchKeyWord->text();
-
-    ui->frameSearch->hide();
 
     //a projedeme seznam polozek a hledame vsechny polozky, ktere obsahuji hledanou frazi
     foreach (Feed * feed, _googleReaderController->getFeedsDB()) {
@@ -1820,7 +1801,6 @@ void GooDer::searchEntry() {
         }
     }
 
-    ui->searchKeyWord->clear();
     ui->entriesTreeWidget->clear();
 
     //ve statusbaru informujeme o poctu nalezenych polozek
