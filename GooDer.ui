@@ -120,6 +120,9 @@
       <property name="wordWrap">
        <bool>true</bool>
       </property>
+      <property name="headerHidden">
+       <bool>true</bool>
+      </property>
       <property name="columnCount">
        <number>2</number>
       </property>

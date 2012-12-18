@@ -88,6 +88,8 @@ class GooDer : public QMainWindow {
         void readPreviousEntry();
         void readNextFeed();
         void readPreviousFeed();
+        void readNextUnreadFeed();
+        void readPrevUnreadFeed();
         void readNextLabel();
         void readPreviousLabel();
         void noUserInfo();

@@ -32,13 +32,11 @@ GooDer::~GooDer()
 {
     qDebug() << "Exiting";
     qDebug() << "";
-    qDebug() << "";
 
     delete ui;
 }
 
-void GooDer::changeEvent(QEvent *e)
-{
+void GooDer::changeEvent(QEvent *e) {
     QMainWindow::changeEvent(e);
     switch (e->type()) {
         case QEvent::LanguageChange:
@@ -64,8 +62,7 @@ void GooDer::changeEvent(QEvent *e)
     }
 }
 
-void GooDer::iconActivated(QSystemTrayIcon::ActivationReason reason)
-{
+void GooDer::iconActivated(QSystemTrayIcon::ActivationReason reason) {
     switch (reason) {
     case QSystemTrayIcon::Trigger:
     case QSystemTrayIcon::DoubleClick:
@@ -75,7 +72,7 @@ void GooDer::iconActivated(QSystemTrayIcon::ActivationReason reason)
         this->checkFeeds();
         break;
     default:
-        ;
+        break;
     }
 }
 
@@ -257,6 +254,10 @@ void GooDer::loginSuccessfull(bool status) {
 */
 void GooDer::onlineState(bool online) {
     _online = online;
+
+    if (!_online) {
+        this->setStatusBarMessage(trUtf8("Can't login to server. Please check internet connection."));
+    }
 }
 
 /*!
@@ -334,19 +335,11 @@ void GooDer::setShortcuts() {
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q), this, SLOT(close()));
     //po stisknuti / se zobrazi pole pro vyhledavani
     new QShortcut(QKeySequence(Qt::Key_Slash), this, SLOT(showSearchLine()));
-    //po stisknuti Escape se se pole skryje
-    new QShortcut(QKeySequence(Qt::Key_Escape), this, SLOT(hideSearchCommandBar()));
-    //po stisknuti CTRL + . prejde na dalsi polozku
     new QShortcut(QKeySequence::fromString(_shortcutNextEntry, QKeySequence::PortableText), this, SLOT(readNextEntry()));
-    //po stisknuti CTRL + , prejde na predchozi polozku
     new QShortcut(QKeySequence::fromString(_shortcutPrevEntry, QKeySequence::PortableText), this, SLOT(readPreviousEntry()));
-    //po stisknuti CTRL + ' prejde na dalsi zdroj
     new QShortcut(QKeySequence::fromString(_shortcutNextFeed, QKeySequence::PortableText), this, SLOT(readNextFeed()));
-    //po stisknuti CTRL + ; prejdu na predchozi zdroj
     new QShortcut(QKeySequence::fromString(_shortcutPrevFeed, QKeySequence::PortableText), this, SLOT(readPreviousFeed()));
-    //po stisknuti CTRL + [ prejde na predchozi stitek
     new QShortcut(QKeySequence::fromString(_shortcutPrevLabel, QKeySequence::PortableText), this, SLOT(readPreviousLabel()));
-    //po stisknuti CTRL + ] prejde na dalsi stitek
     new QShortcut(QKeySequence::fromString(_shortcutNextLabel, QKeySequence::PortableText), this, SLOT(readNextLabel()));
     //po stisknuti CTRL + N zobrazi dialog pro pridani zroje
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_N), this, SLOT(showAddFeedDialog()));
@@ -360,8 +353,11 @@ void GooDer::setShortcuts() {
     new QShortcut(QKeySequence(Qt::Key_F5), this, SLOT(callCheckFeeds()));
     //po stisknuti F1 zobrazi napovedu
     new QShortcut(QKeySequence(Qt::Key_F1), this, SLOT(showHelp()));
-    //po stisknuti CTRL + \ zobrazi/skryje seznam zdroju
+    //po stisknuti META + \ zobrazi/skryje seznam zdroju
     new QShortcut(QKeySequence::fromString(_shortcutToggleFeedPanel, QKeySequence::PortableText), this, SLOT(showHideFeedList()));
+
+    new QShortcut(QKeySequence(Qt::META + Qt::CTRL + Qt::Key_Apostrophe), this, SLOT(readNextUnreadFeed()));
+    new QShortcut(QKeySequence(Qt::META + Qt::CTRL + Qt::Key_Semicolon), this, SLOT(readPrevUnreadFeed()));
 }
 
 /*!
@@ -375,6 +371,7 @@ void GooDer::parseCommands() {
     if (_commandsLine->text().left(1) == "/") {
         searchEntry(command);
         _commandsLine->clear();
+        this->setFocus();
         return;
     }
 
@@ -396,7 +393,6 @@ void GooDer::parseCommands() {
             emit signalAddFeed(feedData.at(1), feedData.at(2), feedData.at(3));
         else
             showStatusBarMessage("Enter all required informations!");
-
     }
     //pokud chci odebrat zdroj
     else if (command == "rm" || command == "remove") emit signalShowRemoveFeedDialog();
@@ -526,9 +522,6 @@ void GooDer::parseCommands() {
             else
                 _commandsLine->setText(command.mid(5,5) + " " + "off");
         }
-        else if (command.mid(5,8) == "password") {
-            _commandsLine->setText(_settings->value("password").toString());
-        }
         else if (command.mid(5,8) == "username") {
             _commandsLine->setText(_settings->value("username").toString());
         }
@@ -542,11 +535,11 @@ void GooDer::parseCommands() {
             showStatusBarMessage("Unknown command: " + command);
     }
     else if (command == "")
-        ui->entriesTreeWidget->setFocus();
+        this->setFocus();
     else
         showStatusBarMessage("Unknown command: " + command);
 
-    ui->entriesTreeWidget->setFocus();
+    this->setFocus();
 }
 
 void GooDer::newFeedAdded() {
@@ -704,24 +697,20 @@ void GooDer::getEntriesReady() {
         refreshFeedWidget();
 
     if (!_firstRun) {
-/////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         checkEntriesFeedsNumbers();
 
         if (ui->feedTreeWidget->currentItem() == NULL)
             return;
-        else {
-            QString feedId = ui->feedTreeWidget->currentItem()->text(2);
 
-            if (feedId == "allfeeds" || feedId == "label")
-                return;
+        QString feedId = ui->feedTreeWidget->currentItem()->text(2);
 
-            ui->entriesTreeWidget->clear();
-            addFeedEntriesToEntriesList(_googleReaderController->getFeedDB(feedId));
-            differentiateEntriesLines();
-        }
+        if (feedId == "allfeeds" || feedId == "label")
+            return;
+
+        ui->entriesTreeWidget->clear();
+        addFeedEntriesToEntriesList(_googleReaderController->getFeedDB(feedId));
     }
     else {
-        //zjistit jestli je nova polozka v aktualne zvolenym zdroji.. podle toho prepisovat ve widgetu
         ui->entriesTreeWidget->clear();
 
         //a vypisi jej do praveho sloupce s polozkami
@@ -731,10 +720,10 @@ void GooDer::getEntriesReady() {
         if (!_showAllFeeds)
             ui->feedTreeWidget->topLevelItem(0)->setHidden(true);
 
-        differentiateEntriesLines();
-
         _firstRun = false;
     }
+
+    differentiateEntriesLines();
 }
 
 /*!
@@ -1595,7 +1584,6 @@ void GooDer::readNextFeed() {
     // if no item is selected move to first label
     if (ui->feedTreeWidget->currentIndex().row() == -1) {
         ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(0));
-        emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
     }
 
     QTreeWidgetItem* currentItem = ui->feedTreeWidget->currentItem();
@@ -1672,6 +1660,98 @@ void GooDer::readPreviousFeed() {
     emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
 }
 
+/*!
+\brief Prejde na dalsi zdroj
+*/
+void GooDer::readNextUnreadFeed() {
+
+    // if there are items in widget
+    if (ui->feedTreeWidget->topLevelItemCount() <= 0)
+        return;
+
+    // if no item is selected move to first label
+    if (ui->feedTreeWidget->currentIndex().row() == -1) {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(0));
+    }
+
+    QTreeWidgetItem* currentItem = ui->feedTreeWidget->currentItem();
+
+    if (ui->feedTreeWidget->itemBelow(currentItem) == NULL)
+        return;
+
+    // if next item is label skip it
+    if (ui->feedTreeWidget->itemBelow(currentItem)->text(2) == "label" ||
+        ui->feedTreeWidget->itemBelow(currentItem)->text(1) == "0") {
+
+        QTreeWidgetItem* labelItem = ui->feedTreeWidget->itemBelow(currentItem);
+
+        // find next item that's not label
+        // there can be 2 or more empty label in row
+        while (labelItem->text(2) == "label" || labelItem->text(1) == "0") {
+            labelItem = ui->feedTreeWidget->itemBelow(labelItem);
+
+            if (ui->feedTreeWidget->itemBelow(labelItem) == NULL) {
+                if (labelItem->text(1) != "0" && labelItem->text(2) != "label")
+                    break;
+                return;
+            }
+        }
+
+        ui->feedTreeWidget->setCurrentItem(labelItem);
+    }
+    else
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemBelow(currentItem));
+
+    emit signalReadNextFeed(ui->feedTreeWidget->currentIndex());
+}
+
+/*!
+\brief Prejde na predchozi zdroj
+*/
+void GooDer::readPrevUnreadFeed() {
+
+    // if there are items in widget
+    if (ui->feedTreeWidget->topLevelItemCount() <= 0)
+        return;
+
+    // if no item is selected move to first label
+    if (ui->feedTreeWidget->currentIndex().row() == -1) {
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->topLevelItem(0));
+        emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
+    }
+
+    QTreeWidgetItem* currentItem = ui->feedTreeWidget->currentItem();
+
+    if (ui->feedTreeWidget->itemAbove(currentItem) == NULL)
+        return;
+
+    if (ui->feedTreeWidget->itemAbove(currentItem)->text(2) == "allfeeds")
+        return;
+
+    // if previous item is label skip it
+    if (ui->feedTreeWidget->itemAbove(currentItem)->text(2) == "label" ||
+        ui->feedTreeWidget->itemAbove(currentItem)->text(1) == "0") {
+        QTreeWidgetItem* labelItem = ui->feedTreeWidget->itemAbove(currentItem);
+
+        // find previous item that's not label
+        // there can be 2 or more empty label in row
+        while (labelItem->text(2) == "label" || labelItem->text(1) == "0") {
+            labelItem = ui->feedTreeWidget->itemAbove(labelItem);
+
+            if (ui->feedTreeWidget->itemAbove(labelItem) == NULL)
+                return;
+        }
+
+        if (labelItem->text(2) == "allfeeds")
+            return;
+
+        ui->feedTreeWidget->setCurrentItem(labelItem);
+    }
+    else
+        ui->feedTreeWidget->setCurrentItem(ui->feedTreeWidget->itemAbove(currentItem));
+
+    emit signalReadPreviousFeed(ui->feedTreeWidget->currentIndex());
+}
 
 /*!
 \brief Prejde na nasledujici stitek
