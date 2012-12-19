@@ -291,7 +291,7 @@ bool GooDer::eventFilter(QObject* obj, QEvent *event)
                 }
             }
             else if (keyEvent->key() == Qt::Key_Escape)
-                ui->feedTreeWidget->setFocus();
+                hideCommandLine();
         }
         return false;
     }
@@ -334,6 +334,7 @@ void GooDer::setShortcuts() {
     new QShortcut(QKeySequence(Qt::SHIFT + Qt::Key_Z, Qt::SHIFT + Qt::Key_Z), this, SLOT(close()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q), this, SLOT(close()));
     //po stisknuti / se zobrazi pole pro vyhledavani
+    new QShortcut(QKeySequence(Qt::Key_Escape), this, SLOT(hideCommandLine()));
     new QShortcut(QKeySequence(Qt::Key_Slash), this, SLOT(showSearchLine()));
     new QShortcut(QKeySequence::fromString(_shortcutNextEntry, QKeySequence::PortableText), this, SLOT(readNextEntry()));
     new QShortcut(QKeySequence::fromString(_shortcutPrevEntry, QKeySequence::PortableText), this, SLOT(readPreviousEntry()));
@@ -534,10 +535,22 @@ void GooDer::parseCommands() {
         else
             showStatusBarMessage("Unknown command: " + command);
     }
-    else if (command == "")
-        this->setFocus();
-    else
-        showStatusBarMessage("Unknown command: " + command);
+    else if (command == "")  this->setFocus();
+    else {
+        bool ok = false;
+        command.toInt(&ok);
+        if (ok) {
+            int index = command.toInt();
+            if (index < 1 || index > ui->entriesTreeWidget->topLevelItemCount()-1) {
+                showStatusBarMessage("Index out of range");
+                return;
+            }
+            ui->entriesTreeWidget->setCurrentItem(ui->entriesTreeWidget->topLevelItem(index-1));
+            emit signalReadNextEntry(ui->entriesTreeWidget->currentIndex());
+        }
+        else
+            showStatusBarMessage("Unknown command: " + command);
+    }
 
     this->setFocus();
 }
@@ -733,6 +746,14 @@ void GooDer::showCommandLine() {
 
     _commandsLine->setText(":");
     _commandsLine->setFocus();
+}
+
+/*!
+\brief Zobrazi pole pro zadavani prikazu
+*/
+void GooDer::hideCommandLine() {
+    _commandsLine->clear();
+    this->setFocus();
 }
 
 /*!

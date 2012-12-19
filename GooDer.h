@@ -81,6 +81,7 @@ class GooDer : public QMainWindow {
         void showCreateNewLabelDialog();
         void createNewLabel(QString);
         void showCommandLine();
+        void hideCommandLine();
         void showSearchLine();
         void parseCommands();
         void openEntryInExternalBrowser();
